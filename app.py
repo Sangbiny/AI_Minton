@@ -108,6 +108,14 @@ def match():
         err_msg = f"에러 발생: {str(e)}\n{traceback.format_exc()}"
         log(err_msg)
         return err_msg
+    @app.route("/log")
+    def show_log():
+        try:
+            with open("log.txt", "r", encoding="utf-8") as f:
+                content = f.read()
+            return f"<pre>{content}</pre>"
+        except Exception as e:
+            return f"로그 파일을 읽는 중 오류 발생: {e}"
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5050)
