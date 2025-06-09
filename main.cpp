@@ -21,7 +21,7 @@ int main()  {
    
     int totalGameCnt;
 
-    std::vector<Player> players = loadPlayersFromFile("input.txt", totalGameCnt);
+    std::vector<Player> players = loadPlayersFromFile("./input.txt", totalGameCnt);
     // Output File Dump
     std::ofstream fout("result_of_match.txt");
     std::ofstream gout("games_per_member.txt");
