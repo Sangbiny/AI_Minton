@@ -1,8 +1,12 @@
 services:
   - type: web
-    name: ai-minton
+    name: ai-minton-service
+    runtime: python
+    buildCommand: "./build_match.sh && pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
     env: python
-    buildCommand: |
-      ./build_match.sh
-      pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    region: oregon
+    plan: free
+    branch: main
+    autoDeploy: true
+
