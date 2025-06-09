@@ -1,0 +1,6 @@
+git init
+git add .
+git commit -m "Initial commit for Render deployment"
+git branch -M main
+git remote add origin https://github.com/Sangbiny/AI_Minton.git  # 네 GitHub 주소로 수정
+git push -u origin main
