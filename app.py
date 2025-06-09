@@ -5,7 +5,7 @@ import traceback
 
 app = Flask(__name__)
 
-INPUT_FILE = "input.txt"
+INPUT_FILE = "./input.txt"
 MATCH_RESULT_FILE = "result_of_match.txt"
 GAME_COUNT_FILE = "games_per_member.txt"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
