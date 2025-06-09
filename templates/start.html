@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>Badminton AI</title>
-</head>
-<body>
-    <h1>🏸 Badminton AI 매칭 시스템</h1>
+{% extends "base.html" %}
+
+{% block title %}시작 페이지{% endblock %}
+
+{% block content %}
     <button onclick="location.href='/match'">게임 매칭 만들기</button>
     <button onclick="location.href='/records'">운동 기록 보기</button>
-</body>
-</html>
+{% endblock %}
