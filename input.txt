@@ -1,5 +1,5 @@
 20
-이상빈 M A
-임철민 M A
-황태일 M A
-오준상 M A
+a M A
+b M A
+c M A
+d M A

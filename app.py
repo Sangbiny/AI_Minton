@@ -42,7 +42,12 @@ def match():
                 f.write(f"{p['name']} {p['gender']} {p['level']}\n")
 
         # 매칭 실행 (C++ 실행파일)
-        result = subprocess.run([MATCH_EXECUTABLE], capture_output=True, text=True)
+        #result = subprocess.run([MATCH_EXECUTABLE], capture_output=True, text=True)
+        try:
+            subprocess.run(["./match"], check=True)
+        except subprocess.CalledProcessError as e:
+            print("Matching Fail:", e)
+            return f"Error occur: {e}"
 
         # 매칭 결과 읽기
         match_output = ""
