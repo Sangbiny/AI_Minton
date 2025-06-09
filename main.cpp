@@ -25,7 +25,7 @@ int main()  {
     // Output File Dump
     std::ofstream fout("./result_of_match.txt");
     std::ofstream gout("./games_per_member.txt");
-    fout.imbue(std::locale("en_US.UTF-8"));
+    //fout.imbue(std::locale("en_US.UTF-8"));
 
 
     //totalGameCnt = 20;

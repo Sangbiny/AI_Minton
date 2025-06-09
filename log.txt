@@ -1,22 +1,7 @@
-== 매칭 요청 수신 ==
-[입력] 총 게임 수: 20
-[입력] 참가자 수: 14
-[파일] input.txt 저장 완료
-[실행] match 실행 시작: /Users/leesangbin/work/badminton/Algorithm/match_web/match
-[실행] match 실행 완료
-[파일] result_of_match.txt 읽기 완료
-[파일] games_per_member.txt 읽기 완료
+=== 서버 시작 ===
 == 매칭 요청 수신 ==
 [입력] 총 게임 수: 20
 [입력] 참가자 수: 6
-[파일] input.txt 저장 완료
-[실행] match 실행 시작: /Users/leesangbin/work/badminton/Algorithm/match_web/match
-[실행] match 실행 완료
-[파일] result_of_match.txt 읽기 완료
-[파일] games_per_member.txt 읽기 완료
-== 매칭 요청 수신 ==
-[입력] 총 게임 수: 10
-[입력] 참가자 수: 7
 [파일] input.txt 저장 완료
 [실행] match 실행 시작: /Users/leesangbin/work/badminton/Algorithm/match_web/match
 [실행] match 실행 완료
