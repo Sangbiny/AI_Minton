@@ -2,31 +2,32 @@ from flask import Flask, render_template, request
 import subprocess
 import os
 import traceback
+import shutil
+from datetime import datetime
 
 app = Flask(__name__)
 
-INPUT_FILE = "./input.txt"
+INPUT_FILE = "input.txt"
 MATCH_RESULT_FILE = "result_of_match.txt"
 GAME_COUNT_FILE = "games_per_member.txt"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MATCH_EXECUTABLE = os.path.join(BASE_DIR, "match")
 LOG_FILE = "log.txt"
 
-# 로그 초기화
-with open(LOG_FILE, "w", encoding="utf-8") as f:
-    f.write("=== 서버 시작 ===\n")
-
 def log(message):
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(message + "\n")
     print(message)
 
-@app.route("/", methods=["GET"])
-def index():
-    return render_template("index.html", result=None)
+@app.route("/")
+def start():
+    return render_template("start.html")
 
-@app.route("/match", methods=["POST"])
+@app.route("/match", methods=["GET", "POST"])
 def match():
+    if request.method == "GET":
+        return render_template("index.html", result=None)
+
     try:
         log("== 매칭 요청 수신 ==")
 
@@ -48,39 +49,32 @@ def match():
 
         log(f"[입력] 참가자 수: {len(players)}")
 
+        # input.txt 작성
         with open(INPUT_FILE, "w", encoding="utf-8") as f:
             f.write(f"{total_game_count}\n")
             for p in players:
                 f.write(f"{p['name']} {p['gender']} {p['level']}\n")
-        log("[파일] input.txt 저장 완료")
+        log(f"[파일] input.txt 저장 완료")
 
         if not os.path.exists(MATCH_EXECUTABLE):
             log(f"[오류] 실행파일 없음: {MATCH_EXECUTABLE}")
             return f"Error: match 실행파일이 존재하지 않습니다: {MATCH_EXECUTABLE}"
-
         if not os.access(MATCH_EXECUTABLE, os.X_OK):
             log(f"[오류] 실행권한 없음: {MATCH_EXECUTABLE}")
             return f"Error: match 실행파일에 실행 권한이 없습니다"
 
         log(f"[실행] match 실행 시작: {MATCH_EXECUTABLE}")
-        try:
-            subprocess.run([MATCH_EXECUTABLE], check=True)
-            log("[실행] match 실행 완료")
-        except subprocess.CalledProcessError as e:
-            log(f"[오류] match 실행 실패 (CalledProcessError): {e}")
-            return f"[CalledProcessError] 매칭 실패: {e}"
-        except OSError as e:
-            log(f"[오류] match 실행 실패 (OSError): {e}")
-            return f"[OSError] 실행 실패: {e.strerror} ({e.filename})"
+        subprocess.run([MATCH_EXECUTABLE], check=True)
+        log("[실행] match 실행 완료")
 
+        # 매칭 결과 읽기
         match_output = ""
         if os.path.exists(MATCH_RESULT_FILE):
             with open(MATCH_RESULT_FILE, "r", encoding="utf-8") as f:
                 match_output = f.read()
             log("[파일] result_of_match.txt 읽기 완료")
-        else:
-            log("[경고] result_of_match.txt 파일 없음")
 
+        # 멤버별 게임 수 읽기
         game_count_output = {}
         if os.path.exists(GAME_COUNT_FILE):
             with open(GAME_COUNT_FILE, "r", encoding="utf-8") as f:
@@ -90,8 +84,15 @@ def match():
                         name, count = parts
                         game_count_output[name] = count
             log("[파일] games_per_member.txt 읽기 완료")
-        else:
-            log("[경고] games_per_member.txt 파일 없음")
+
+        # 기록 디렉토리에 저장
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        record_dir = os.path.join(BASE_DIR, "records", timestamp)
+        os.makedirs(record_dir, exist_ok=True)
+        shutil.copy(INPUT_FILE, os.path.join(record_dir, INPUT_FILE))
+        shutil.copy(MATCH_RESULT_FILE, os.path.join(record_dir, MATCH_RESULT_FILE))
+        shutil.copy(GAME_COUNT_FILE, os.path.join(record_dir, GAME_COUNT_FILE))
+        log(f"[기록] {record_dir} 에 저장 완료")
 
         return render_template(
             "index.html",
@@ -113,7 +114,4 @@ def show_log():
         return f"<pre>{content}</pre>"
     except Exception as e:
         return f"로그 파일을 읽는 중 오류 발생: {e}"
-
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5050)
 
