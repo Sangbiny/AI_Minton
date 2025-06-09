@@ -3,13 +3,14 @@
 {% block title %}게임 매칭 만들기{% endblock %}
 
 {% block content %}
+    <h2>게임 참가자 입력</h2>
     <form method="post" action="/match">
         <label for="total_game_count">총 게임 수:</label>
-        <input type="text" id="total_game_count" name="total_game_count"><br><br>
+        <input type="text" id="total_game_count" name="total_game_count" required><br><br>
 
         <div id="playerInputs">
-            <div>
-                <label>이름: <input type="text" name="name1"></label>
+            <div class="player-entry">
+                <label>이름: <input type="text" name="name1" required></label>
                 <label>성별:
                     <select name="gender1">
                         <option value="M">남</option>
@@ -34,15 +35,15 @@
     {% if result %}
         <h2>매칭 결과</h2>
         <pre>{{ result }}</pre>
+    {% endif %}
 
-        {% if game_counts %}
-            <h3>멤버별 게임 수</h3>
-            <ul>
-                {% for name, count in game_counts.items() %}
-                    <li>{{ name }}: {{ count }}게임</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+    {% if game_counts %}
+        <h3>멤버별 게임 수</h3>
+        <ul>
+            {% for name, count in game_counts.items() %}
+                <li>{{ name }}: {{ count }} 게임</li>
+            {% endfor %}
+        </ul>
     {% endif %}
 
     <script>
@@ -50,8 +51,9 @@
         function addPlayer() {
             const container = document.getElementById("playerInputs");
             const div = document.createElement("div");
+            div.classList.add("player-entry");
             div.innerHTML = `
-                <label>이름: <input type="text" name="name${playerIndex}"></label>
+                <label>이름: <input type="text" name="name${playerIndex}" required></label>
                 <label>성별:
                     <select name="gender${playerIndex}">
                         <option value="M">남</option>
