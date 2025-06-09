@@ -23,8 +23,8 @@ int main()  {
 
     std::vector<Player> players = loadPlayersFromFile("./input.txt", totalGameCnt);
     // Output File Dump
-    std::ofstream fout("result_of_match.txt");
-    std::ofstream gout("games_per_member.txt");
+    std::ofstream fout("./result_of_match.txt");
+    std::ofstream gout("./games_per_member.txt");
     fout.imbue(std::locale("en_US.UTF-8"));
 
 
