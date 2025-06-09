@@ -7,7 +7,8 @@ app = Flask(__name__)
 INPUT_FILE = "input.txt"
 MATCH_RESULT_FILE = "result_of_match.txt"
 GAME_COUNT_FILE = "games_per_member.txt"
-MATCH_EXECUTABLE = "./match"  # C++ 실행파일 이름
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MATCH_EXECUTABLE = os.path.join(BASE_DIR, "match")
 
 @app.route("/", methods=["GET"])
 def index():
