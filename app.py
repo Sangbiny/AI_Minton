@@ -10,8 +10,11 @@ MATCH_RESULT_FILE = "result_of_match.txt"
 GAME_COUNT_FILE = "games_per_member.txt"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MATCH_EXECUTABLE = os.path.join(BASE_DIR, "match")
-
 LOG_FILE = "log.txt"
+
+# 로그 초기화
+with open(LOG_FILE, "w", encoding="utf-8") as f:
+    f.write("=== 서버 시작 ===\n")
 
 def log(message):
     with open(LOG_FILE, "a", encoding="utf-8") as f:
@@ -27,13 +30,11 @@ def match():
     try:
         log("== 매칭 요청 수신 ==")
 
-        # 총 게임 수 읽기
         total_game_count = request.form.get("total_game_count", "").strip()
         log(f"[입력] 총 게임 수: {total_game_count}")
         if not total_game_count.isdigit():
             raise ValueError("게임 수는 숫자여야 합니다.")
 
-        # 참가자 정보 수집
         players = []
         i = 1
         while True:
@@ -47,14 +48,12 @@ def match():
 
         log(f"[입력] 참가자 수: {len(players)}")
 
-        # input.txt 작성
         with open(INPUT_FILE, "w", encoding="utf-8") as f:
             f.write(f"{total_game_count}\n")
             for p in players:
                 f.write(f"{p['name']} {p['gender']} {p['level']}\n")
-        log(f"[파일] input.txt 저장 완료")
+        log("[파일] input.txt 저장 완료")
 
-        # match 파일 존재 여부 확인
         if not os.path.exists(MATCH_EXECUTABLE):
             log(f"[오류] 실행파일 없음: {MATCH_EXECUTABLE}")
             return f"Error: match 실행파일이 존재하지 않습니다: {MATCH_EXECUTABLE}"
@@ -63,7 +62,6 @@ def match():
             log(f"[오류] 실행권한 없음: {MATCH_EXECUTABLE}")
             return f"Error: match 실행파일에 실행 권한이 없습니다"
 
-        # 매칭 실행
         log(f"[실행] match 실행 시작: {MATCH_EXECUTABLE}")
         try:
             subprocess.run([MATCH_EXECUTABLE], check=True)
@@ -75,7 +73,6 @@ def match():
             log(f"[오류] match 실행 실패 (OSError): {e}")
             return f"[OSError] 실행 실패: {e.strerror} ({e.filename})"
 
-        # 매칭 결과 읽기
         match_output = ""
         if os.path.exists(MATCH_RESULT_FILE):
             with open(MATCH_RESULT_FILE, "r", encoding="utf-8") as f:
@@ -84,7 +81,6 @@ def match():
         else:
             log("[경고] result_of_match.txt 파일 없음")
 
-        # 멤버별 게임 수 읽기
         game_count_output = {}
         if os.path.exists(GAME_COUNT_FILE):
             with open(GAME_COUNT_FILE, "r", encoding="utf-8") as f:
@@ -109,8 +105,7 @@ def match():
         log(err_msg)
         return err_msg
 
-    @app.route("/log")
-
+@app.route("/log")
 def show_log():
     try:
         with open("log.txt", "r", encoding="utf-8") as f:
