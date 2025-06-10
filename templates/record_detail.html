@@ -5,10 +5,35 @@
 <h2>{{ folder_name }}</h2>
 
 <div style="display: flex; gap: 40px; flex-wrap: nowrap; overflow-x: auto;">
+    <!-- 매칭 결과 -->
     <div>
         <h3>매칭 결과</h3>
-        <pre>{{ match_result }}</pre>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 120px;">경기</th>
+                    <th style="width: 80px;">선수1</th>
+                    <th style="width: 80px;">선수2</th>
+                    <th style="width: 80px;">선수3</th>
+                    <th style="width: 80px;">선수4</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in match_result.split('\n') if line.strip() %}
+                    {% set cols = line.split() %}
+                    <tr>
+                        <td>제 {{ loop.index }} 경기</td>
+                        <td>{{ cols[0] if cols|length > 0 else '' }}</td>
+                        <td>{{ cols[1] if cols|length > 1 else '' }}</td>
+                        <td>{{ cols[2] if cols|length > 2 else '' }}</td>
+                        <td>{{ cols[3] if cols|length > 3 else '' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+
+    <!-- 멤버별 게임 수 -->
     <div>
         <h3>멤버별 게임 수</h3>
         <table>
