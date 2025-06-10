@@ -49,6 +49,13 @@
         padding: 5px;
         text-align: center;
     }
+    .result-container {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 40px;
+        margin-top: 30px;
+    }
 </style>
 
 <script>
@@ -124,7 +131,93 @@
     <br><br>
     <button type="submit">매칭 실행</button>
 </form>
+{% else %}
 
+<!-- 참가자 명단 -->
+{% set chunk_size = 10 %}
+{% for start in range(0, players|length, chunk_size) %}
+<div style="display: inline-block; vertical-align: top; margin-right: 30px;">
+    <table>
+        <thead>
+            <tr>
+                <th>번호</th>
+                <th>이름</th>
+                <th>성별</th>
+                <th>급수</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in range(start, [start + chunk_size, players|length] | min) %}
+            <tr>
+                <td>선수 {{ i + 1 }}</td>
+                <td>{{ players[i]["name"] }}</td>
+                <td>{{ players[i]["gender"] }}</td>
+                <td>{{ players[i]["level"] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+
+<!-- 결과 출력 -->
+<div class="result-container">
+    <div style="flex: 1; min-width: 400px;">
+        <h2>매칭 결과</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 120px;">경기</th>
+                    <th style="width: 80px;">선수1</th>
+                    <th style="width: 80px;">선수2</th>
+                    <th style="width: 80px;">선수3</th>
+                    <th style="width: 80px;">선수4</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in result.split('\n') if line.strip() %}
+                {% set cols = line.split() %}
+                <tr>
+                    <td>제 {{ loop.index }} 경기</td>
+                    <td>{{ cols[0] if cols|length > 0 else '' }}</td>
+                    <td>{{ cols[1] if cols|length > 1 else '' }}</td>
+                    <td>{{ cols[2] if cols|length > 2 else '' }}</td>
+                    <td>{{ cols[3] if cols|length > 3 else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div style="min-width: 600px;">
+        <h2 style="margin-bottom: 10px;">멤버별 게임 수</h2>
+        {% if game_counts %}
+        <div style="display: flex; gap: 40px; flex-wrap: nowrap; overflow-x: auto;">
+            {% set names = game_counts.keys() | list %}
+            {% set chunk_size = 10 %}
+            {% for start in range(0, names | length, chunk_size) %}
+            <div style="display: inline-block;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>이름</th>
+                            <th>게임 수</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in range(start, [start + chunk_size, names | length] | min) %}
+                        <tr>
+                            <td>{{ names[i] }}</td>
+                            <td>{{ game_counts[names[i]] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
 {% endif %}
 {% endblock %}
 
