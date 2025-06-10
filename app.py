@@ -127,6 +127,29 @@ def show_record_detail(folder):
 
     return render_template("index.html", players=[], result=match_output, game_counts=game_counts)
 
+@app.route("/records/<folder>")
+def record_detail(folder):
+    folder_path = os.path.join(RECORDS_DIR, folder)
+    result_path = os.path.join(folder_path, MATCH_RESULT_FILE)
+    count_path = os.path.join(folder_path, GAME_COUNT_FILE)
+
+    match_result = ""
+    if os.path.exists(result_path):
+        with open(result_path, "r", encoding="utf-8") as f:
+            match_result = f.read()
+
+    game_counts = {}
+    if os.path.exists(count_path):
+        with open(count_path, "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) == 2:
+                    name, count = parts
+                    game_counts[name] = count
+
+    return render_template("record_detail.html", folder_name=folder, match_result=match_result, game_counts=game_counts)
+
+
 @app.route("/log")
 def show_log():
     try:
