@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>운동 기록 보기</h1>
+
+{% if record_folders %}
+    <ul style="list-style-type: none; padding-left: 0;">
+        {% for folder in record_folders %}
+            <li style="margin: 8px 0;">
+                📁 <a href="/records/{{ folder }}">{{ folder }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>기록이 없습니다.</p>
+{% endif %}
+{% endblock %}
+

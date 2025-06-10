@@ -2,17 +2,32 @@
 
 {% block content %}
 <h1>운동 기록 보기</h1>
+<h2>{{ folder_name }}</h2>
 
-{% if record_folders %}
-    <ul style="list-style-type: none; padding-left: 0;">
-        {% for folder in record_folders %}
-            <li style="margin: 8px 0;">
-                📁 <a href="/records/{{ folder }}">{{ folder }}</a>
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>기록이 없습니다.</p>
-{% endif %}
+<div style="display: flex; gap: 40px; flex-wrap: nowrap; overflow-x: auto;">
+    <div>
+        <h3>매칭 결과</h3>
+        <pre>{{ match_result }}</pre>
+    </div>
+    <div>
+        <h3>멤버별 게임 수</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>이름</th>
+                    <th>게임 수</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, count in game_counts.items() %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
 
