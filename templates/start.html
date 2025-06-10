@@ -1,53 +1,61 @@
-{% extends "base.html" %}
-{% block content %}
+<!-- match_web/templates/start.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Badminton AI</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            font-size: 64px;
+            margin-top: 100px;
+            margin-bottom: 20px;
+        }
+        hr {
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid #ccc;
+            margin-bottom: 40px;
+        }
+        .button-container {
+            display: flex;
+            gap: 30px;
+        }
+        .quick-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: 120px;
+            background-color: #f1f3f4;
+            border: none;
+            border-radius: 16px;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+        .quick-button:hover {
+            background-color: #e2e2e2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏸 AI MINTON</h1>
+    <hr>
 
-<style>
-    body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        height: 100vh;
-        margin: 0;
-        padding-top: 150px; /* Google 위치 비슷하게 */
-    }
-    .title {
-        font-size: 40px;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 10px;
-    }
-    hr {
-        width: 60%;
-        border: none;
-        border-top: 1px solid #ccc;
-        margin: 20px 0;
-    }
-    .button-container {
-        display: flex;
-        gap: 20px;
-    }
-    .google-style-button {
-        padding: 14px 24px;
-        border: none;
-        border-radius: 10px;
-        background-color: #f2f2f2;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-        font-size: 16px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-    .google-style-button:hover {
-        background-color: #e6e6e6;
-    }
-</style>
-
-<div class="title">🏸 AI MINTON</div>
-<hr>
-<div class="button-container">
-    <button class="google-style-button" onclick="location.href='/match'">Game Match</button>
-    <button class="google-style-button" onclick="location.href='/records'">Activity Records</button>
-</div>
-
-{% endblock %}
+    <div class="button-container">
+        <button class="quick-button" onclick="location.href='/match'">Game Match</button>
+        <button class="quick-button" onclick="location.href='/records'">Activity Records</button>
+    </div>
+</body>
+</html>
 
