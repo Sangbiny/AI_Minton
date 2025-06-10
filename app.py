@@ -105,29 +105,6 @@ def show_records():
     return render_template("records.html", record_folders=folders)
 
 @app.route("/records/<folder>")
-def show_record_detail(folder):
-    record_path = os.path.join(RECORDS_DIR, folder)
-    result_file = os.path.join(record_path, "result_of_match.txt")
-    game_file = os.path.join(record_path, "games_per_member.txt")
-
-    match_output = ""
-    game_counts = {}
-
-    if os.path.exists(result_file):
-        with open(result_file, "r", encoding="utf-8") as f:
-            match_output = f.read()
-
-    if os.path.exists(game_file):
-        with open(game_file, "r", encoding="utf-8") as f:
-            for line in f:
-                parts = line.strip().split()
-                if len(parts) == 2:
-                    name, count = parts
-                    game_counts[name] = count
-
-    return render_template("index.html", players=[], result=match_output, game_counts=game_counts)
-
-@app.route("/records/<folder>")
 def record_detail(folder):
     folder_path = os.path.join(RECORDS_DIR, folder)
     result_path = os.path.join(folder_path, MATCH_RESULT_FILE)
@@ -148,6 +125,7 @@ def record_detail(folder):
                     game_counts[name] = count
 
     return render_template("record_detail.html", folder_name=folder, match_result=match_result, game_counts=game_counts)
+
 
 
 @app.route("/log")
