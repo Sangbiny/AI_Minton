@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, send_from_directory
 import subprocess
 import os
 import traceback
+import shutil
 from datetime import datetime
 
 app = Flask(__name__)
@@ -126,6 +127,17 @@ def record_detail(folder):
 
     return render_template("record_detail.html", folder_name=folder, match_result=match_result, game_counts=game_counts)
 
+@app.route("/records/<folder>/delete", methods=["POST"])
+def delete_record_folder(folder):
+    folder_path = os.path.join(RECORDS_DIR, folder)
+    try:
+        if os.path.exists(folder_path):
+            shutil.rmtree(folder_path)
+            return '', 204  # 성공
+        else:
+            return "폴더가 존재하지 않습니다.", 404
+    except Exception as e:
+        return f"삭제 중 오류 발생: {e}", 500
 
 
 @app.route("/log")

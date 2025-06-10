@@ -1,18 +1,36 @@
 {% extends "base.html" %}
-
 {% block content %}
-<h1>운동 기록 보기</h1>
+<h1>📂 운동 기록 보기</h1>
 
-{% if record_folders %}
-    <ul style="list-style-type: none; padding-left: 0;">
-        {% for folder in record_folders %}
-            <li style="margin: 8px 0;">
-                📁 <a href="/records/{{ folder }}">{{ folder }}</a>
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>기록이 없습니다.</p>
-{% endif %}
+<ul>
+    {% for folder in record_folders %}
+    <li>
+        <a href="{{ url_for('record_detail', folder=folder) }}">{{ folder }}</a>
+        <button onclick="confirmDelete('{{ folder }}')">삭제</button>
+    </li>
+    {% endfor %}
+</ul>
+
+<script>
+function confirmDelete(folder) {
+    const password = prompt("비밀번호를 입력하세요:");
+
+    if (password === "4568") {
+        fetch(`/records/${folder}/delete`, {
+            method: "POST"
+        })
+        .then(res => {
+            if (res.ok) {
+                alert("삭제 완료!");
+                location.reload();
+            } else {
+                alert("삭제 실패");
+            }
+        });
+    } else if (password !== null) {
+        alert("비밀번호가 틀렸습니다.");
+    }
+}
+</script>
 {% endblock %}
 
