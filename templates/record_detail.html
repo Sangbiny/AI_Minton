@@ -4,8 +4,7 @@
 <h1>운동 기록 보기</h1>
 <h2>{{ folder_name }}</h2>
 
-<div style="display: flex; gap: 40px; flex-wrap: nowrap; overflow-x: auto;">
-    <!-- 매칭 결과 -->
+<div style="display: flex; gap: 80px; flex-wrap: nowrap; margin-top: 20px;">
     <div>
         <h3>매칭 결과</h3>
         <table>
@@ -33,9 +32,9 @@
         </table>
     </div>
 
-    <!-- 멤버별 게임 수 -->
     <div>
         <h3>멤버별 게임 수</h3>
+        {% if game_counts %}
         <table>
             <thead>
                 <tr>
@@ -52,6 +51,9 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% else %}
+        <p>데이터 없음</p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
