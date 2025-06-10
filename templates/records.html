@@ -1,36 +1,49 @@
 {% extends "base.html" %}
 {% block content %}
+
+<style>
+    .record-entry {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        gap: 12px;
+        font-size: 20px;
+    }
+    .record-entry a {
+        text-decoration: none;
+        color: #333;
+        font-weight: 500;
+    }
+    .record-entry a:hover {
+        text-decoration: underline;
+    }
+    .record-entry form {
+        margin: 0;
+    }
+    .record-entry button {
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        background-color: #f8f8f8;
+        cursor: pointer;
+    }
+    .record-entry button:hover {
+        background-color: #e0e0e0;
+    }
+</style>
+
 <h1>📂 운동 기록 보기</h1>
 
 <ul>
     {% for folder in record_folders %}
-    <li>
-        <a href="{{ url_for('record_detail', folder=folder) }}">{{ folder }}</a>
-        <button onclick="confirmDelete('{{ folder }}')">삭제</button>
+    <li class="record-entry">
+        <a href="/records/{{ folder }}">{{ folder }}</a>
+        <form action="/delete/{{ folder }}" method="post">
+            <button type="submit">삭제</button>
+        </form>
     </li>
     {% endfor %}
 </ul>
 
-<script>
-function confirmDelete(folder) {
-    const password = prompt("비밀번호를 입력하세요:");
-
-    if (password === "4568") {
-        fetch(`/records/${folder}/delete`, {
-            method: "POST"
-        })
-        .then(res => {
-            if (res.ok) {
-                alert("삭제 완료!");
-                location.reload();
-            } else {
-                alert("삭제 실패");
-            }
-        });
-    } else if (password !== null) {
-        alert("비밀번호가 틀렸습니다.");
-    }
-}
-</script>
 {% endblock %}
 
