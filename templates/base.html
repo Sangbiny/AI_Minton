@@ -1,16 +1,21 @@
+<!-- base.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}AI MINTON{% endblock %}</title>
+    <title>AI MINTON</title>
 </head>
 <body>
-    <header>
-        <h1><a href="/" style="text-decoration: none; color: inherit;">🏸 AI MINTON</a></h1>
+    {% if request.path != "/" %}
+    <div style="padding: 20px;">
+        <a href="/" style="font-size: 28px; font-weight: bold; text-decoration: none;">🏠 AI MINTON</a>
         <hr>
-    </header>
-
-    {% block content %}
-    {% endblock %}
+    </div>
+    {% endif %}
+    
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
 </body>
 </html>
+
