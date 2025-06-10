@@ -6,7 +6,7 @@
 {% if record_folders %}
     <ul style="list-style-type: none; padding-left: 0;">
         {% for folder in record_folders %}
-            <li style="margin: 8px 0;">
+            <li style="margin: 8px 0; font-size: 24px; font-weight: bold">
                 📁 <a href="/records/{{ folder }}">{{ folder }}</a>
             </li>
         {% endfor %}
