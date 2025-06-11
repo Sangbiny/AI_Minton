@@ -1,54 +1,30 @@
-# db.py
 import sqlite3
-from datetime import datetime
-
-DB_PATH = "records.db"
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect("match_web.db")
     c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS match_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            folder_name TEXT UNIQUE,
-            result_text TEXT,
-            games_per_user TEXT,
-            created_at TEXT
-        )
-    ''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS match_records (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    folder TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS match_result (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    record_id INTEGER,
+                    match_order INTEGER,
+                    player1 TEXT, player2 TEXT, player3 TEXT, player4 TEXT,
+                    FOREIGN KEY (record_id) REFERENCES match_records(id)
+                )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS game_counts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    record_id INTEGER,
+                    name TEXT,
+                    count INTEGER,
+                    FOREIGN KEY (record_id) REFERENCES match_records(id)
+                )''')
+
     conn.commit()
     conn.close()
-
-def insert_record(folder_name, result_text, games_per_user_json):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''
-        INSERT INTO match_records (folder_name, result_text, games_per_user, created_at)
-        VALUES (?, ?, ?, ?)
-    ''', (folder_name, result_text, games_per_user_json, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-    conn.commit()
-    conn.close()
-
-def get_all_records():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('SELECT folder_name, created_at FROM match_records ORDER BY created_at DESC')
-    rows = c.fetchall()
-    conn.close()
-    return rows
-
-def get_record_by_folder(folder_name):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('SELECT result_text, games_per_user FROM match_records WHERE folder_name = ?', (folder_name,))
-    row = c.fetchone()
-    conn.close()
-    return row
-
-def delete_record_by_folder(folder_name):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('DELETE FROM match_records WHERE folder_name = ?', (folder_name,))
-    conn.commit()
-    conn.close()
-
