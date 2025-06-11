@@ -1,106 +1,122 @@
 from flask import Flask, render_template, request, redirect, url_for
-import subprocess
 import os
-import sqlite3
+import subprocess
+import traceback
 from datetime import datetime
-from db import init_db
+from db import init_db, record_match, get_all_records, get_record_detail, delete_record
 
 app = Flask(__name__)
 
-DB_FILE = "match_web.db"
-MATCH_EXECUTABLE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "match")
+# Constants
+INPUT_FILE = "input.txt"
+MATCH_RESULT_FILE = "result_of_match.txt"
+GAME_COUNT_FILE = "games_per_member.txt"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MATCH_EXECUTABLE = os.path.join(BASE_DIR, "match")
+LOG_FILE = os.path.join(BASE_DIR, "log.txt")
+DB_PATH = os.path.join(BASE_DIR, "records.db")
+
+def log(message):
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(message + "\n")
+    print(message)
 
 @app.route("/")
 def start():
     return render_template("start.html")
 
-@app.route("/match", methods=["GET", "POST"])
-def match():
-    if request.method == "GET":
-        return render_template("index.html", result=None)
+@app.route("/match", methods=["GET"])
+def show_match_form():
+    return render_template("index.html", result=None)
 
-    total_game_count = request.form.get("total_game_count", "").strip()
-    if not total_game_count.isdigit():
-        return "게임 수는 숫자여야 합니다."
+@app.route("/match", methods=["POST"])
+def run_match():
+    try:
+        log("== 매칭 요청 수신 ==")
 
-    players = []
-    i = 1
-    while True:
-        name = request.form.get(f"name{i}")
-        gender = request.form.get(f"gender{i}")
-        level = request.form.get(f"level{i}")
-        if not name:
-            break
-        players.append({"name": name.strip(), "gender": gender, "level": level})
-        i += 1
+        total_game_count = request.form.get("total_game_count", "").strip()
+        log(f"[입력] 총 게임 수: {total_game_count}")
+        if not total_game_count.isdigit():
+            raise ValueError("게임 수는 숫자여야 합니다.")
 
-    input_text = f"{total_game_count}\n" + "\n".join(f"{p['name']} {p['gender']} {p['level']}" for p in players)
-    with open("input.txt", "w", encoding="utf-8") as f:
-        f.write(input_text)
+        players = []
+        i = 1
+        while True:
+            name = request.form.get(f"name{i}")
+            gender = request.form.get(f"gender{i}")
+            level = request.form.get(f"level{i}")
+            if not name:
+                break
+            players.append({"name": name.strip(), "gender": gender, "level": level})
+            i += 1
 
-    subprocess.run([MATCH_EXECUTABLE], check=True)
+        log(f"[입력] 참가자 수: {len(players)}")
 
-    with open("result_of_match.txt", "r", encoding="utf-8") as f:
-        result_lines = [line.strip() for line in f if line.strip()]
+        # input.txt 작성
+        with open(INPUT_FILE, "w", encoding="utf-8") as f:
+            f.write(f"{total_game_count}\n")
+            for p in players:
+                f.write(f"{p['name']} {p['gender']} {p['level']}\n")
+        log("[파일] input.txt 저장 완료")
 
-    with open("games_per_member.txt", "r", encoding="utf-8") as f:
-        count_lines = [line.strip().split() for line in f if line.strip()]
-        game_counts = {name: count for name, count in count_lines}
+        # match 실행
+        if not os.path.exists(MATCH_EXECUTABLE):
+            raise FileNotFoundError("match 실행파일이 존재하지 않습니다.")
+        if not os.access(MATCH_EXECUTABLE, os.X_OK):
+            raise PermissionError("match 실행파일에 실행 권한이 없습니다.")
 
-    folder = datetime.now().strftime("%Y%m%d_%H%M%S")
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("INSERT INTO match_records (folder) VALUES (?)", (folder,))
-    record_id = c.lastrowid
+        subprocess.run([MATCH_EXECUTABLE], check=True)
+        log("[실행] match 실행 완료")
 
-    for idx, line in enumerate(result_lines):
-        parts = line.split()
-        c.execute("""INSERT INTO match_result (record_id, match_order, player1, player2, player3, player4)
-                     VALUES (?, ?, ?, ?, ?, ?)""",
-                  (record_id, idx + 1, *parts[:4]))
+        # 결과 파일 읽기
+        match_output = ""
+        game_counts = {}
 
-    for name, count in game_counts.items():
-        c.execute("INSERT INTO game_counts (record_id, name, count) VALUES (?, ?, ?)",
-                  (record_id, name, int(count)))
+        if os.path.exists(MATCH_RESULT_FILE):
+            with open(MATCH_RESULT_FILE, "r", encoding="utf-8") as f:
+                match_output = f.read()
+            log("[파일] result_of_match.txt 읽기 완료")
 
-    conn.commit()
-    conn.close()
+        if os.path.exists(GAME_COUNT_FILE):
+            with open(GAME_COUNT_FILE, "r", encoding="utf-8") as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) == 2:
+                        name, count = parts
+                        game_counts[name] = count
+            log("[파일] games_per_member.txt 읽기 완료")
 
-    result = "\n".join(result_lines)
-    return render_template("index.html", players=players, result=result, game_counts=game_counts)
+        # DB 저장
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        record_match(DB_PATH, timestamp, match_output, game_counts)
+        log(f"[DB] 기록 저장 완료: {timestamp}")
+
+        return render_template("index.html", players=players, result=match_output, game_counts=game_counts)
+
+    except Exception as e:
+        error_msg = traceback.format_exc()
+        log("[오류 발생]\n" + error_msg)
+        return f"<h2>서버 내부 오류</h2><pre>{error_msg}</pre>"
 
 @app.route("/records")
 def show_records():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT id, folder FROM match_records ORDER BY created_at DESC")
-    folders = c.fetchall()
-    conn.close()
+    folders = get_all_records(DB_PATH)
     return render_template("records.html", record_folders=folders)
 
 @app.route("/records/<folder>")
-def record_detail(folder):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-
-    c.execute("SELECT id FROM match_records WHERE folder = ?", (folder,))
-    row = c.fetchone()
-    if not row:
-        return "기록을 찾을 수 없습니다."
-    record_id = row[0]
-
-    c.execute("SELECT match_order, player1, player2, player3, player4 FROM match_result WHERE record_id = ? ORDER BY match_order", (record_id,))
-    result_lines = [f"{row[1]} {row[2]} {row[3]} {row[4]}" for row in c.fetchall()]
-
-    c.execute("SELECT name, count FROM game_counts WHERE record_id = ?", (record_id,))
-    game_counts = {name: count for name, count in c.fetchall()}
-
-    conn.close()
-    match_result = "\n".join(result_lines)
-
+def show_record_detail(folder):
+    match_result, game_counts = get_record_detail(DB_PATH, folder)
     return render_template("record_detail.html", folder_name=folder, match_result=match_result, game_counts=game_counts)
 
+@app.route("/delete/<folder>", methods=["POST"])
+def delete(folder):
+    password = request.form.get("password")
+    if password != "4568":
+        return "<script>alert('비밀번호가 틀렸습니다.'); window.location.href='/records';</script>"
+    delete_record(DB_PATH, folder)
+    return redirect(url_for("show_records"))
+
 if __name__ == "__main__":
-    init_db()
+    init_db(DB_PATH)
     app.run(debug=True, host="0.0.0.0", port=5050)
 
