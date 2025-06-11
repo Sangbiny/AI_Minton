@@ -1,49 +1,60 @@
 # db.py
+import os
 import sqlite3
 from datetime import datetime
 
-DB_PATH = "match_records.db"
+DB_PATH = os.path.join(os.path.dirname(__file__), "records.db")
 
+# DB 초기화 함수
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS records (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TEXT,
-                    result TEXT,
-                    games TEXT
-                )''')
-    conn.commit()
-    conn.close()
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            match_result TEXT NOT NULL,
+            game_counts TEXT NOT NULL
+        )
+        """)
+        conn.commit()
 
-def save_record(result_text, games_text):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    now = datetime.now().strftime("%Y%m%d_%H%M%S")
-    c.execute("INSERT INTO records (timestamp, result, games) VALUES (?, ?, ?)", (now, result_text, games_text))
-    conn.commit()
-    conn.close()
+# 기록 저장 함수
+def save_record(match_result, game_counts):
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        c.execute("INSERT INTO records (timestamp, match_result, game_counts) VALUES (?, ?, ?)",
+                  (timestamp, match_result, game_counts))
+        conn.commit()
 
+# 전체 기록 가져오기
 def get_all_records():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT id, timestamp FROM records ORDER BY id DESC")
-    rows = c.fetchall()
-    conn.close()
-    return rows
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("SELECT id, timestamp FROM records ORDER BY id DESC")
+        return [row[1] for row in c.fetchall()]
 
-def get_record_detail(record_id):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT timestamp, result, games FROM records WHERE id = ?", (record_id,))
-    row = c.fetchone()
-    conn.close()
-    return row
+# 특정 기록 상세 조회
+def get_record_detail(timestamp):
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("SELECT match_result, game_counts FROM records WHERE timestamp = ?", (timestamp,))
+        row = c.fetchone()
+        if row:
+            match_result, game_counts_str = row
+            game_counts = {}
+            for line in game_counts_str.strip().split("\n"):
+                name, count = line.strip().split()
+                game_counts[name] = count
+            return match_result, game_counts
+        else:
+            return "", {}
 
-def delete_record(record_id):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("DELETE FROM records WHERE id = ?", (record_id,))
-    conn.commit()
-    conn.close()
+# 기록 삭제 함수
+def delete_record(timestamp):
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("DELETE FROM records WHERE timestamp = ?", (timestamp,))
+        conn.commit()
 

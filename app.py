@@ -1,3 +1,4 @@
+# app.py
 import os
 import datetime
 import subprocess
@@ -16,12 +17,10 @@ def log_message(message):
     with open(os.path.join(BASE_DIR, "log.txt"), "a", encoding="utf-8") as f:
         f.write(f"[{datetime.datetime.now()}] {message}\n")
 
-# 홈 화면
 @app.route("/")
 def start_page():
     return render_template("start.html")
 
-# 게임 매칭 화면
 @app.route("/match", methods=["GET", "POST"])
 def match():
     if request.method == "POST":
@@ -42,7 +41,6 @@ def match():
                 flash("최소 4명 이상의 참가자가 필요합니다.")
                 return redirect(url_for("match"))
 
-            # input.txt 생성
             with open(INPUT_FILE, "w", encoding="utf-8") as f:
                 f.write(f"{total_game_count}\n{len(players)}\n")
                 for p in players:
@@ -50,20 +48,16 @@ def match():
 
             log_message(f"[입력 저장] 총 게임 수: {total_game_count}, 참가자 수: {len(players)}")
 
-            # 매칭 실행
             result = subprocess.run([MATCH_EXEC], check=True, capture_output=True, text=True)
             log_message("[매칭 실행 완료]")
 
-            # 결과 파일 읽기
             with open("result_of_match.txt", "r", encoding="utf-8") as f:
                 match_output = f.read()
             with open("games_per_member.txt", "r", encoding="utf-8") as f:
                 game_count_output = f.read()
 
-            # DB에 저장
             save_record(match_output, game_count_output)
 
-            # 게임 수 dict로 변환
             game_counts = {}
             for line in game_count_output.strip().split("\n"):
                 name, count = line.split()
@@ -78,19 +72,16 @@ def match():
 
     return render_template("index.html", players=[], result=None)
 
-# 기록 목록 보기
 @app.route("/records")
 def records():
     folders = get_all_records()
     return render_template("records.html", record_folders=folders)
 
-# 기록 상세 보기
 @app.route("/records/<folder>")
 def record_detail(folder):
     match_result, game_counts = get_record_detail(folder)
     return render_template("record_detail.html", folder_name=folder, match_result=match_result, game_counts=game_counts)
 
-# 기록 삭제
 @app.route("/records/delete/<folder>", methods=["POST"])
 def delete(folder):
     password = request.form.get("password")
@@ -106,8 +97,6 @@ def delete(folder):
         flash(f"삭제 실패: {str(e)}")
         return redirect(url_for("record_detail", folder=folder))
 
-# 앱 시작
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)
-
