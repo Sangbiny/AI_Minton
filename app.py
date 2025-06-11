@@ -88,7 +88,7 @@ def run_match():
 
         # DB 저장
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        save_record(DB_PATH, timestamp, match_output, game_counts)
+        save_record(match_output, game_counts)
         log(f"[DB] 기록 저장 완료: {timestamp}")
 
         return render_template("index.html", players=players, result=match_output, game_counts=game_counts)
