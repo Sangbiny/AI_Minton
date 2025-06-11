@@ -1,122 +1,113 @@
-from flask import Flask, render_template, request, redirect, url_for
 import os
+import datetime
 import subprocess
 import traceback
-from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for, flash
 from db import init_db, save_record, get_all_records, get_record_detail, delete_record
 
 app = Flask(__name__)
-
-# Constants
-INPUT_FILE = "input.txt"
-MATCH_RESULT_FILE = "result_of_match.txt"
-GAME_COUNT_FILE = "games_per_member.txt"
+app.secret_key = "your_secret_key"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MATCH_EXECUTABLE = os.path.join(BASE_DIR, "match")
-LOG_FILE = os.path.join(BASE_DIR, "log.txt")
-DB_PATH = os.path.join(BASE_DIR, "records.db")
+MATCH_EXEC = os.path.join(BASE_DIR, "match")
+INPUT_FILE = os.path.join(BASE_DIR, "input.txt")
 
-def log(message):
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(message + "\n")
-    print(message)
+# 로그 기록 함수
+def log_message(message):
+    with open(os.path.join(BASE_DIR, "log.txt"), "a", encoding="utf-8") as f:
+        f.write(f"[{datetime.datetime.now()}] {message}\n")
 
+# 홈 화면
 @app.route("/")
-def start():
+def start_page():
     return render_template("start.html")
 
-@app.route("/match", methods=["GET"])
-def show_match_form():
-    return render_template("index.html", result=None)
+# 게임 매칭 화면
+@app.route("/match", methods=["GET", "POST"])
+def match():
+    if request.method == "POST":
+        try:
+            total_game_count = int(request.form.get("total_game_count", 20))
+            players = []
+            i = 1
+            while True:
+                name = request.form.get(f"name{i}")
+                if not name:
+                    break
+                gender = request.form.get(f"gender{i}", "M")
+                level = request.form.get(f"level{i}", "C")
+                players.append((name.strip(), gender, level))
+                i += 1
 
-@app.route("/match", methods=["POST"])
-def run_match():
-    try:
-        log("== 매칭 요청 수신 ==")
+            if len(players) < 4:
+                flash("최소 4명 이상의 참가자가 필요합니다.")
+                return redirect(url_for("match"))
 
-        total_game_count = request.form.get("total_game_count", "").strip()
-        log(f"[입력] 총 게임 수: {total_game_count}")
-        if not total_game_count.isdigit():
-            raise ValueError("게임 수는 숫자여야 합니다.")
+            # input.txt 생성
+            with open(INPUT_FILE, "w", encoding="utf-8") as f:
+                f.write(f"{total_game_count}\n{len(players)}\n")
+                for p in players:
+                    f.write(" ".join(p) + "\n")
 
-        players = []
-        i = 1
-        while True:
-            name = request.form.get(f"name{i}")
-            gender = request.form.get(f"gender{i}")
-            level = request.form.get(f"level{i}")
-            if not name:
-                break
-            players.append({"name": name.strip(), "gender": gender, "level": level})
-            i += 1
+            log_message(f"[입력 저장] 총 게임 수: {total_game_count}, 참가자 수: {len(players)}")
 
-        log(f"[입력] 참가자 수: {len(players)}")
+            # 매칭 실행
+            result = subprocess.run([MATCH_EXEC], check=True, capture_output=True, text=True)
+            log_message("[매칭 실행 완료]")
 
-        # input.txt 작성
-        with open(INPUT_FILE, "w", encoding="utf-8") as f:
-            f.write(f"{total_game_count}\n")
-            for p in players:
-                f.write(f"{p['name']} {p['gender']} {p['level']}\n")
-        log("[파일] input.txt 저장 완료")
-
-        # match 실행
-        if not os.path.exists(MATCH_EXECUTABLE):
-            raise FileNotFoundError("match 실행파일이 존재하지 않습니다.")
-        if not os.access(MATCH_EXECUTABLE, os.X_OK):
-            raise PermissionError("match 실행파일에 실행 권한이 없습니다.")
-
-        subprocess.run([MATCH_EXECUTABLE], check=True)
-        log("[실행] match 실행 완료")
-
-        # 결과 파일 읽기
-        match_output = ""
-        game_counts = {}
-
-        if os.path.exists(MATCH_RESULT_FILE):
-            with open(MATCH_RESULT_FILE, "r", encoding="utf-8") as f:
+            # 결과 파일 읽기
+            with open("result_of_match.txt", "r", encoding="utf-8") as f:
                 match_output = f.read()
-            log("[파일] result_of_match.txt 읽기 완료")
+            with open("games_per_member.txt", "r", encoding="utf-8") as f:
+                game_count_output = f.read()
 
-        if os.path.exists(GAME_COUNT_FILE):
-            with open(GAME_COUNT_FILE, "r", encoding="utf-8") as f:
-                for line in f:
-                    parts = line.strip().split()
-                    if len(parts) == 2:
-                        name, count = parts
-                        game_counts[name] = count
-            log("[파일] games_per_member.txt 읽기 완료")
+            # DB에 저장
+            save_record(match_output, game_count_output)
 
-        # DB 저장
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        save_record(match_output, game_counts)
-        log(f"[DB] 기록 저장 완료: {timestamp}")
+            # 게임 수 dict로 변환
+            game_counts = {}
+            for line in game_count_output.strip().split("\n"):
+                name, count = line.split()
+                game_counts[name] = count
 
-        return render_template("index.html", players=players, result=match_output, game_counts=game_counts)
+            return render_template("index.html", players=players, result=match_output, game_counts=game_counts)
 
-    except Exception as e:
-        error_msg = traceback.format_exc()
-        log("[오류 발생]\n" + error_msg)
-        return f"<h2>서버 내부 오류</h2><pre>{error_msg}</pre>"
+        except Exception as e:
+            error_detail = traceback.format_exc()
+            log_message(f"[에러 발생]\n{error_detail}")
+            return "서버 내부 오류가 발생했습니다. 로그를 확인하세요.", 500
 
+    return render_template("index.html", players=[], result=None)
+
+# 기록 목록 보기
 @app.route("/records")
-def show_records():
-    folders = get_all_records(DB_PATH)
+def records():
+    folders = get_all_records()
     return render_template("records.html", record_folders=folders)
 
+# 기록 상세 보기
 @app.route("/records/<folder>")
-def show_record_detail(folder):
-    match_result, game_counts = get_record_detail(DB_PATH, folder)
+def record_detail(folder):
+    match_result, game_counts = get_record_detail(folder)
     return render_template("record_detail.html", folder_name=folder, match_result=match_result, game_counts=game_counts)
 
-@app.route("/delete/<folder>", methods=["POST"])
+# 기록 삭제
+@app.route("/records/delete/<folder>", methods=["POST"])
 def delete(folder):
     password = request.form.get("password")
     if password != "4568":
-        return "<script>alert('비밀번호가 틀렸습니다.'); window.location.href='/records';</script>"
-    delete_record(DB_PATH, folder)
-    return redirect(url_for("show_records"))
+        flash("비밀번호가 틀렸습니다.")
+        return redirect(url_for("record_detail", folder=folder))
 
+    try:
+        delete_record(folder)
+        flash(f"{folder} 기록이 삭제되었습니다.")
+        return redirect(url_for("records"))
+    except Exception as e:
+        flash(f"삭제 실패: {str(e)}")
+        return redirect(url_for("record_detail", folder=folder))
+
+# 앱 시작
 if __name__ == "__main__":
-    init_db(DB_PATH)
-    app.run(debug=True, host="0.0.0.0", port=5050)
+    init_db()
+    app.run(debug=True)
 
