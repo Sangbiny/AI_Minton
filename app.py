@@ -3,7 +3,7 @@ import os
 import subprocess
 import traceback
 from datetime import datetime
-from db import init_db, record_match, get_all_records, get_record_detail, delete_record
+from db import init_db, save_record, get_all_records, get_record_detail, delete_record
 
 app = Flask(__name__)
 
@@ -88,7 +88,7 @@ def run_match():
 
         # DB 저장
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        record_match(DB_PATH, timestamp, match_output, game_counts)
+        save_record(DB_PATH, timestamp, match_output, game_counts)
         log(f"[DB] 기록 저장 완료: {timestamp}")
 
         return render_template("index.html", players=players, result=match_output, game_counts=game_counts)
