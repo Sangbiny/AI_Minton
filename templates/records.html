@@ -1,49 +1,52 @@
 {% extends "base.html" %}
 {% block content %}
-
 <style>
+    .record-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 30px;
+    }
     .record-entry {
         display: flex;
         align-items: center;
-        margin-bottom: 10px;
-        gap: 12px;
-        font-size: 20px;
+        justify-content: space-between;
+        padding: 12px 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     .record-entry a {
+        font-size: 18px;
         text-decoration: none;
         color: #333;
-        font-weight: 500;
-    }
-    .record-entry a:hover {
-        text-decoration: underline;
+        font-weight: bold;
     }
     .record-entry form {
         margin: 0;
     }
     .record-entry button {
-        padding: 4px 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        background-color: #f8f8f8;
+        padding: 6px 12px;
+        font-size: 14px;
+        background-color: #ff4d4d;
+        color: white;
+        border: none;
+        border-radius: 5px;
         cursor: pointer;
-    }
-    .record-entry button:hover {
-        background-color: #e0e0e0;
     }
 </style>
 
 <h1>📂 운동 기록 보기</h1>
-
-<ul>
+<div class="record-list">
     {% for folder in record_folders %}
-    <li class="record-entry">
+    <div class="record-entry">
         <a href="/records/{{ folder }}">{{ folder }}</a>
-        <form action="/delete/{{ folder }}" method="post">
+        <form action="/delete_record" method="POST">
+            <input type="hidden" name="folder" value="{{ folder }}">
+            <input type="password" name="password" placeholder="비밀번호" required>
             <button type="submit">삭제</button>
         </form>
-    </li>
+    </div>
     {% endfor %}
-</ul>
-
+</div>
 {% endblock %}
-
