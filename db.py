@@ -39,8 +39,8 @@ def get_all_records():
     try:
         with sqlite3.connect(DB_PATH) as conn:
             c = conn.cursor()
-            c.execute("SELECT id, timestamp FROM records ORDER BY id DESC")
-            return [row[1] for row in c.fetchall()]
+            c.execute("SELECT timestamp FROM records ORDER BY id DESC")
+            return [row[0] for row in c.fetchall()]
     except Exception as e:
         print(f"[DB Error - get_all_records] {e}")
         return []
