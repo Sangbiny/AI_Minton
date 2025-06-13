@@ -1,42 +1,77 @@
+# db.py
 import os
-from flask_sqlalchemy import SQLAlchemy
+import psycopg2
+from datetime import datetime
 
-db = SQLAlchemy()
+DB_URL = os.environ.get("DATABASE_URL")
 
-def init_app(app):
-    DATABASE_URL = os.getenv("DATABASE_URL")
-    if not DATABASE_URL:
-        raise RuntimeError("환경 변수 DATABASE_URL이 설정되지 않았습니다.")
-    # postgres:// → postgresql:// 교정
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    db.init_app(app)
+# DB 초기화 함수
+def init_db():
+    try:
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                c.execute("""
+                CREATE TABLE IF NOT EXISTS records (
+                    id SERIAL PRIMARY KEY,
+                    timestamp TEXT NOT NULL,
+                    match_result TEXT NOT NULL,
+                    game_counts TEXT NOT NULL
+                )
+                """)
+                conn.commit()
+    except Exception as e:
+        print(f"[DB Error - init_db] {e}")
 
-    # 최초 실행 시 테이블이 없으면 생성
-    with app.app_context():
-        db.create_all()
+# 기록 저장 함수
+def save_record(match_result, game_counts):
+    try:
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                c.execute("INSERT INTO records (timestamp, match_result, game_counts) VALUES (%s, %s, %s)",
+                          (timestamp, match_result, game_counts))
+                conn.commit()
+    except Exception as e:
+        print(f"[DB Error - save_record] {e}")
 
-class Record(db.Model):
-    __tablename__ = 'records'
-    id = db.Column(db.Integer, primary_key=True)
-    folder = db.Column(db.String(64), unique=True, nullable=False)
-    timestamp = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+# 전체 기록 가져오기
+def get_all_records():
+    try:
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                c.execute("SELECT timestamp FROM records ORDER BY id DESC")
+                return [row[0] for row in c.fetchall()]
+    except Exception as e:
+        print(f"[DB Error - get_all_records] {e}")
+        return []
 
-class MatchEntry(db.Model):
-    __tablename__ = 'match_entries'
-    id = db.Column(db.Integer, primary_key=True)
-    record_id = db.Column(db.Integer, db.ForeignKey('records.id'), nullable=False)
-    round = db.Column(db.Integer, nullable=False)
-    player1 = db.Column(db.String(64))
-    player2 = db.Column(db.String(64))
-    player3 = db.Column(db.String(64))
-    player4 = db.Column(db.String(64))
+# 특정 기록 상세 조회
+def get_record_detail(timestamp):
+    try:
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                c.execute("SELECT match_result, game_counts FROM records WHERE timestamp = %s", (timestamp,))
+                row = c.fetchone()
+                if row:
+                    match_result, game_counts_str = row
+                    game_counts = {}
+                    for line in game_counts_str.strip().split("\n"):
+                        name, count = line.strip().split()
+                        game_counts[name] = count
+                    return match_result, game_counts
+                else:
+                    return "", {}
+    except Exception as e:
+        print(f"[DB Error - get_record_detail] {e}")
+        return "", {}
 
-class GameCount(db.Model):
-    __tablename__ = 'game_counts'
-    id = db.Column(db.Integer, primary_key=True)
-    record_id = db.Column(db.Integer, db.ForeignKey('records.id'), nullable=False)
-    player = db.Column(db.String(64), nullable=False)
-    count = db.Column(db.Integer, nullable=False)
+# 기록 삭제 함수
+def delete_record(timestamp):
+    try:
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                c.execute("DELETE FROM records WHERE timestamp = %s", (timestamp,))
+                conn.commit()
+    except Exception as e:
+        print(f"[DB Error - delete_record] {e}")
 

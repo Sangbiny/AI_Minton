@@ -1,98 +1,96 @@
-import os, subprocess, traceback, logging
-from flask import Flask, render_template, request, redirect, url_for
-from db import init_app, db, Record, MatchEntry, GameCount
+# app.py
+import os
+import logging
+from flask import Flask, request, render_template, redirect, url_for
+from db import init_db, save_record, get_all_records, get_record_detail, delete_record
 
 app = Flask(__name__)
-init_app(app)
 
-# 로깅 설정
-handler = logging.StreamHandler()
-handler.setLevel(logging.INFO)
-app.logger.addHandler(handler)
-app.logger.setLevel(logging.INFO)
+# 로그 설정
+logging.basicConfig(filename="app.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# DB 초기화
+init_db()
 
 @app.route("/")
-def home():
+def start():
     return render_template("start.html")
 
-@app.route("/match", methods=["GET", "POST"])
+@app.route("/match")
 def match():
-    if request.method == "GET":
-        return render_template("index.html", players=[], result="", game_counts={})
+    return render_template("index.html", players=[], result="", game_counts={})
 
-    # POST 처리
+@app.route("/run_match", methods=["POST"])
+def run_match():
     try:
-        total_game_count = request.form.get("total_game_count","").strip()
-        if not total_game_count.isdigit():
-            raise ValueError("총 게임 수는 숫자여야 합니다.")
-        players = []
-        i = 1
-        while True:
-            name = request.form.get(f"name{i}")
-            if not name:
-                break
-            players.append({
-                "name": name.strip(),
-                "gender": request.form.get(f"gender{i}"),
-                "level": request.form.get(f"level{i}")
-            })
-            i += 1
+        players = request.form["players"].strip().splitlines()
+        players = [p.strip() for p in players if p.strip()]
 
-        # 실행 파일 호출 등 기존 로직...
+        if len(players) < 4:
+            return render_template("index.html", players=players, result="플레이어가 최소 4명 필요합니다.", game_counts={})
 
-        # 내역을 DB로 저장
-        folder = Record(folder=str(datetime.utcnow()).replace(":", "_"))
-        db.session.add(folder)
-        db.session.flush()
+        # input.txt 저장
+        with open("input.txt", "w", encoding="utf-8") as f:
+            f.write("\n".join(players))
 
-        # match_output, game_counts 필요
+        # C++ 매칭 실행
+        os.system("./match")
 
-        # 예시: match_output 라인의 순서에 따라 MatchEntry 저장
-        for idx, line in enumerate(match_output.splitlines(), start=1):
-            cols = line.split()
-            entry = MatchEntry(
-                record_id=folder.id, round=idx,
-                player1=cols[0], player2=cols[1], player3=cols[2], player4=cols[3]
-            )
-            db.session.add(entry)
+        # 결과 읽기
+        result = ""
+        if os.path.exists("result_of_match.txt"):
+            with open("result_of_match.txt", "r", encoding="utf-8") as f:
+                result = f.read()
 
-        for player, cnt in game_counts.items():
-            gc = GameCount(record_id=folder.id, player=player, count=int(cnt))
-            db.session.add(gc)
+        game_counts = {}
+        if os.path.exists("games_per_member.txt"):
+            with open("games_per_member.txt", "r", encoding="utf-8") as f:
+                for line in f:
+                    name, count = line.strip().split()
+                    game_counts[name] = count
 
-        db.session.commit()
-        return render_template("index.html", players=players, result=match_output, game_counts=game_counts)
+        # 기록 저장
+        save_record(result, "\n".join([f"{k} {v}" for k, v in game_counts.items()]))
+
+        return render_template("index.html", players=players, result=result, game_counts=game_counts)
 
     except Exception as e:
-        app.logger.error(traceback.format_exc())
-        return f"에러 발생: {e}"
+        logging.error(f"[ERROR /run_match] {e}")
+        return "오류가 발생했습니다."
 
 @app.route("/records")
 def records():
-    recs = Record.query.order_by(Record.id.desc()).all()
-    return render_template("records.html", record_folders=recs)
+    try:
+        folders = get_all_records()
+        return render_template("records.html", record_folders=folders)
+    except Exception as e:
+        logging.error(f"[ERROR /records] {e}")
+        return "기록 불러오기 오류"
 
-@app.route("/records/<int:rec_id>")
-def record_detail(rec_id):
-    rec = Record.query.get_or_404(rec_id)
-    matches = MatchEntry.query.filter_by(record_id=rec_id).order_by(MatchEntry.round).all()
-    games = GameCount.query.filter_by(record_id=rec_id).all()
-    return render_template("record_detail.html", record=rec, matches=matches, games=games)
+@app.route("/records/<folder>")
+def record_detail(folder):
+    try:
+        match_result, game_counts = get_record_detail(folder)
+        return render_template("record_detail.html", folder_name=folder, match_result=match_result, game_counts=game_counts)
+    except Exception as e:
+        logging.error(f"[ERROR /records/<folder>] {e}")
+        return "기록 상세 조회 오류"
 
 @app.route("/delete_record", methods=["POST"])
-def delete_record():
-    rec_id = request.form.get("record_id")
-    pw = request.form.get("password")
-    if pw != "4568":
-        return "비밀번호가 올바르지 않습니다.", 403
-    rec = Record.query.get_or_404(rec_id)
-    MatchEntry.query.filter_by(record_id=rec.id).delete()
-    GameCount.query.filter_by(record_id=rec.id).delete()
-    db.session.delete(rec)
-    db.session.commit()
-    return redirect(url_for("records"))
+def delete():
+    try:
+        folder = request.form.get("folder")
+        password = request.form.get("password")
+
+        if password != "4568":
+            return "<script>alert('비밀번호가 틀렸습니다.'); history.back();</script>"
+
+        delete_record(folder)
+        return redirect(url_for("records"))
+    except Exception as e:
+        logging.error(f"[ERROR /delete_record] {e}")
+        return "삭제 중 오류 발생"
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
-    app.run(debug=True, host="0.0.0.0", port=port)
+    app.run(debug=True)
 
