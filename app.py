@@ -1,4 +1,3 @@
-# app.py
 import os
 import logging
 from flask import Flask, request, render_template, redirect, url_for
@@ -16,12 +15,11 @@ init_db()
 def start():
     return render_template("start.html")
 
-@app.route("/match")
+@app.route("/match", methods=["GET", "POST"])
 def match():
-    return render_template("index.html", players=[], result="", game_counts={})
+    if request.method == "GET":
+        return render_template("index.html", players=[], result="", game_counts={})
 
-@app.route("/run_match", methods=["POST"])
-def run_match():
     try:
         players = request.form["players"].strip().splitlines()
         players = [p.strip() for p in players if p.strip()]
@@ -55,7 +53,7 @@ def run_match():
         return render_template("index.html", players=players, result=result, game_counts=game_counts)
 
     except Exception as e:
-        logging.error(f"[ERROR /run_match] {e}")
+        logging.error(f"[ERROR /match POST] {e}")
         return "오류가 발생했습니다."
 
 @app.route("/records")
