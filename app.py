@@ -35,14 +35,13 @@ def match():
         if len(players) < 4:
             return render_template("index.html", players=players, result="플레이어가 최소 4명 필요합니다.", game_counts={})
 
-        # input.txt 저장
+        # 🔧 여기 수정됨
         with open("input.txt", "w", encoding="utf-8") as f:
+            f.write(f"{total_game_count}\n")
             f.write("\n".join(players))
 
-        # C++ 매칭 실행
         os.system("./match")
 
-        # 결과 읽기
         result = ""
         if os.path.exists("result_of_match.txt"):
             with open("result_of_match.txt", "r", encoding="utf-8") as f:
@@ -55,7 +54,6 @@ def match():
                     name, count = line.strip().split()
                     game_counts[name] = count
 
-        # 기록 저장
         save_record(result, "\n".join([f"{k} {v}" for k, v in game_counts.items()]))
 
         return render_template("index.html", players=players, result=result, game_counts=game_counts)
@@ -63,6 +61,7 @@ def match():
     except Exception as e:
         logging.error(f"[ERROR /match POST] {e}")
         return "오류가 발생했습니다."
+
 
 @app.route("/records")
 def records():
