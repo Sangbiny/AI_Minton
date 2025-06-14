@@ -2,14 +2,15 @@
 import os
 import logging
 from flask import Flask, request, render_template, redirect, url_for
-from db import init_db, save_record, get_all_records, get_record_detail, delete_record
+from db import (
+    init_db, save_record, get_all_records,
+    get_record_detail, delete_record, update_display_name
+)
 
 app = Flask(__name__)
 
 # 로그 설정
-if not os.path.exists("logs"):
-    os.makedirs("logs")
-logging.basicConfig(filename="logs/app.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(filename="app.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # DB 초기화
 init_db()
@@ -18,34 +19,35 @@ init_db()
 def start():
     return render_template("start.html")
 
-@app.route("/match", methods=["GET", "POST"])
+@app.route("/match")
 def match():
-    if request.method == "GET":
-        return render_template("index.html", players=[], result="", game_counts={})
+    return render_template("index.html", players=[], result="", game_counts={})
+
+@app.route("/match", methods=["POST"])
+def run_match():
     try:
-        total_game_count = request.form.get("total_game_count", "0")
-        player_list = []
+        players = []
         i = 1
-        while f"name{i}" in request.form:
+        while True:
             name = request.form.get(f"name{i}")
             gender = request.form.get(f"gender{i}")
             level = request.form.get(f"level{i}")
-            if name:
-                player_list.append(f"{name} {gender} {level}")
+            if not name:
+                break
+            players.append({"name": name.strip(), "gender": gender, "level": level})
             i += 1
 
-        if len(player_list) < 4:
-            return render_template("index.html", players=[], result="플레이어가 최소 4명 필요합니다.", game_counts={})
+        total_game_count = request.form.get("total_game_count", "0")
+        if not total_game_count.isdigit():
+            raise ValueError("게임 수는 숫자여야 합니다.")
 
-        # input.txt 저장
         with open("input.txt", "w", encoding="utf-8") as f:
-            f.write(total_game_count + "\n")
-            f.write("\n".join(player_list))
+            f.write(f"{total_game_count}\n")
+            for p in players:
+                f.write(f"{p['name']} {p['gender']} {p['level']}\n")
 
-        # C++ 매칭 실행
         os.system("./match")
 
-        # 결과 읽기
         result = ""
         if os.path.exists("result_of_match.txt"):
             with open("result_of_match.txt", "r", encoding="utf-8") as f:
@@ -60,12 +62,10 @@ def match():
 
         save_record(result, "\n".join([f"{k} {v}" for k, v in game_counts.items()]))
 
-        players_info = [{"name": line.split()[0], "gender": line.split()[1], "level": line.split()[2]} for line in player_list]
-
-        return render_template("index.html", players=players_info, result=result, game_counts=game_counts)
+        return render_template("index.html", players=players, result=result, game_counts=game_counts)
 
     except Exception as e:
-        logging.error(f"[ERROR /match POST] {e}")
+        logging.error(f"[ERROR /match] {e}")
         return "오류가 발생했습니다."
 
 @app.route("/records")
@@ -91,7 +91,6 @@ def delete():
     try:
         folder = request.form.get("folder")
         password = request.form.get("password")
-
         if password != "4568":
             return "<script>alert('비밀번호가 틀렸습니다.'); history.back();</script>"
 
@@ -100,6 +99,17 @@ def delete():
     except Exception as e:
         logging.error(f"[ERROR /delete_record] {e}")
         return "삭제 중 오류 발생"
+
+@app.route("/rename_record", methods=["POST"])
+def rename():
+    try:
+        folder = request.form.get("folder")
+        new_name = request.form.get("new_name")
+        update_display_name(folder, new_name)
+        return redirect(url_for("records"))
+    except Exception as e:
+        logging.error(f"[ERROR /rename_record] {e}")
+        return "이름 변경 중 오류 발생"
 
 if __name__ == "__main__":
     app.run(debug=True)

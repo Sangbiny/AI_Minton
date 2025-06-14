@@ -23,7 +23,15 @@
         font-weight: bold;
     }
     .record-entry form {
+        display: flex;
+        gap: 5px;
         margin: 0;
+        align-items: center;
+    }
+    .record-entry input[type="password"],
+    .record-entry input[type="text"] {
+        padding: 5px;
+        font-size: 14px;
     }
     .record-entry button {
         padding: 6px 12px;
@@ -34,30 +42,28 @@
         border-radius: 5px;
         cursor: pointer;
     }
-    .empty-message {
-        margin-top: 40px;
-        font-size: 18px;
-        color: #777;
-        text-align: center;
+    .rename-button {
+        background-color: #4CAF50;
     }
 </style>
 
 <h1>📂 운동 기록 보기</h1>
 <div class="record-list">
-    {% if record_folders %}
-        {% for folder in record_folders %}
-        <div class="record-entry">
-            <a href="/records/{{ folder }}">{{ folder }}</a>
-            <form action="/delete_record" method="POST">
-                <input type="hidden" name="folder" value="{{ folder }}">
-                <input type="password" name="password" placeholder="비밀번호" required>
-                <button type="submit">삭제</button>
-            </form>
-        </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty-message">저장된 운동 기록이 없습니다.</div>
-    {% endif %}
+    {% for record in record_folders %}
+    <div class="record-entry">
+        <a href="/records/{{ record.timestamp }}">{{ record.display_name }}</a>
+        <form action="/rename_record" method="POST">
+            <input type="hidden" name="folder" value="{{ record.timestamp }}">
+            <input type="text" name="new_name" placeholder="새 이름">
+            <button type="submit" class="rename-button">이름 변경</button>
+        </form>
+        <form action="/delete_record" method="POST">
+            <input type="hidden" name="folder" value="{{ record.timestamp }}">
+            <input type="password" name="password" placeholder="비밀번호" required>
+            <button type="submit">삭제</button>
+        </form>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}
 
