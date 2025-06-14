@@ -24,15 +24,6 @@
     }
     .record-entry form {
         margin: 0;
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-    .record-entry input[type="password"] {
-        padding: 5px;
-        font-size: 14px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
     }
     .record-entry button {
         padding: 6px 12px;
@@ -43,19 +34,30 @@
         border-radius: 5px;
         cursor: pointer;
     }
+    .empty-message {
+        margin-top: 40px;
+        font-size: 18px;
+        color: #777;
+        text-align: center;
+    }
 </style>
 
 <h1>📂 운동 기록 보기</h1>
 <div class="record-list">
-    {% for folder in record_folders %}
-    <div class="record-entry">
-        <a href="{{ url_for('record_detail', timestamp=folder) }}">{{ folder }}</a>
-        <form action="{{ url_for('delete', timestamp=folder) }}" method="POST">
-            <input type="password" name="password" placeholder="비밀번호" required>
-            <button type="submit">삭제</button>
-        </form>
-    </div>
-    {% endfor %}
+    {% if record_folders %}
+        {% for folder in record_folders %}
+        <div class="record-entry">
+            <a href="/records/{{ folder }}">{{ folder }}</a>
+            <form action="/delete_record" method="POST">
+                <input type="hidden" name="folder" value="{{ folder }}">
+                <input type="password" name="password" placeholder="비밀번호" required>
+                <button type="submit">삭제</button>
+            </form>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-message">저장된 운동 기록이 없습니다.</div>
+    {% endif %}
 </div>
 {% endblock %}
 
