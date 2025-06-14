@@ -14,10 +14,13 @@ def init_db():
                     id SERIAL PRIMARY KEY,
                     timestamp TEXT NOT NULL,
                     match_result TEXT NOT NULL,
-                    game_counts TEXT NOT NULL,
-                    display_name TEXT
+                    game_counts TEXT NOT NULL
                 )
                 """)
+                try:
+                    c.execute("ALTER TABLE records ADD COLUMN display_name TEXT")
+                except:
+                    pass  # 컬럼이 이미 있으면 무시
                 conn.commit()
     except Exception as e:
         print(f"[DB Error - init_db] {e}")
