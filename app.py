@@ -7,7 +7,9 @@ from db import init_db, save_record, get_all_records, get_record_detail, delete_
 app = Flask(__name__)
 
 # 로그 설정
-logging.basicConfig(filename="app.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+logging.basicConfig(filename="logs/app.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # DB 초기화
 init_db()
@@ -20,28 +22,30 @@ def start():
 def match():
     if request.method == "GET":
         return render_template("index.html", players=[], result="", game_counts={})
-
     try:
-        total_game_count = int(request.form.get("total_game_count", 20))
-
-        players = []
-        for i in range(1, 101):
+        total_game_count = request.form.get("total_game_count", "0")
+        player_list = []
+        i = 1
+        while f"name{i}" in request.form:
             name = request.form.get(f"name{i}")
             gender = request.form.get(f"gender{i}")
             level = request.form.get(f"level{i}")
             if name:
-                players.append(f"{name} {gender} {level}")
+                player_list.append(f"{name} {gender} {level}")
+            i += 1
 
-        if len(players) < 4:
-            return render_template("index.html", players=players, result="플레이어가 최소 4명 필요합니다.", game_counts={})
+        if len(player_list) < 4:
+            return render_template("index.html", players=[], result="플레이어가 최소 4명 필요합니다.", game_counts={})
 
-        # 🔧 여기 수정됨
+        # input.txt 저장
         with open("input.txt", "w", encoding="utf-8") as f:
-            f.write(f"{total_game_count}\n")
-            f.write("\n".join(players))
+            f.write(total_game_count + "\n")
+            f.write("\n".join(player_list))
 
+        # C++ 매칭 실행
         os.system("./match")
 
+        # 결과 읽기
         result = ""
         if os.path.exists("result_of_match.txt"):
             with open("result_of_match.txt", "r", encoding="utf-8") as f:
@@ -56,12 +60,13 @@ def match():
 
         save_record(result, "\n".join([f"{k} {v}" for k, v in game_counts.items()]))
 
-        return render_template("index.html", players=players, result=result, game_counts=game_counts)
+        players_info = [{"name": line.split()[0], "gender": line.split()[1], "level": line.split()[2]} for line in player_list]
+
+        return render_template("index.html", players=players_info, result=result, game_counts=game_counts)
 
     except Exception as e:
         logging.error(f"[ERROR /match POST] {e}")
         return "오류가 발생했습니다."
-
 
 @app.route("/records")
 def records():
