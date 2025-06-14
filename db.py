@@ -5,7 +5,6 @@ from datetime import datetime
 
 DB_URL = os.environ.get("DATABASE_URL")
 
-# DB 초기화 함수
 def init_db():
     try:
         with psycopg2.connect(DB_URL) as conn:
@@ -23,34 +22,42 @@ def init_db():
     except Exception as e:
         print(f"[DB Error - init_db] {e}")
 
-# 기록 저장 함수
 def save_record(match_result, game_counts):
     try:
         with psycopg2.connect(DB_URL) as conn:
             with conn.cursor() as c:
-                raw_date = datetime.now().strftime("%Y-%m-%d")
-                c.execute("SELECT COUNT(*) FROM records WHERE timestamp LIKE %s", (f"{raw_date}%",))
-                count = c.fetchone()[0] + 1
-                display_name = f"{raw_date} 운동" if count == 1 else f"{raw_date} 운동({count})"
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                display_name = generate_display_name(c, timestamp)
                 c.execute("INSERT INTO records (timestamp, match_result, game_counts, display_name) VALUES (%s, %s, %s, %s)",
                           (timestamp, match_result, game_counts, display_name))
                 conn.commit()
     except Exception as e:
         print(f"[DB Error - save_record] {e}")
 
-# 전체 기록 가져오기
+def generate_display_name(cursor, timestamp):
+    date_part = timestamp.split("_")[0]
+    cursor.execute("SELECT display_name FROM records WHERE display_name LIKE %s", (f"{date_part} 운동%",))
+    existing = [row[0] for row in cursor.fetchall()]
+    count = 1
+    base_name = f"{date_part} 운동"
+    new_name = base_name
+    while new_name in existing:
+        count += 1
+        new_name = f"{base_name}({count})"
+    return new_name
+
 def get_all_records():
     try:
         with psycopg2.connect(DB_URL) as conn:
             with conn.cursor() as c:
                 c.execute("SELECT timestamp, display_name FROM records ORDER BY id DESC")
-                return c.fetchall()  # list of (timestamp, display_name)
+                return [
+                    {"timestamp": row[0], "display_name": row[1] or row[0]} for row in c.fetchall()
+                ]
     except Exception as e:
         print(f"[DB Error - get_all_records] {e}")
         return []
 
-# 특정 기록 상세 조회
 def get_record_detail(timestamp):
     try:
         with psycopg2.connect(DB_URL) as conn:
@@ -70,7 +77,6 @@ def get_record_detail(timestamp):
         print(f"[DB Error - get_record_detail] {e}")
         return "", {}
 
-# 기록 삭제 함수
 def delete_record(timestamp):
     try:
         with psycopg2.connect(DB_URL) as conn:
@@ -80,7 +86,6 @@ def delete_record(timestamp):
     except Exception as e:
         print(f"[DB Error - delete_record] {e}")
 
-# 이름 변경 함수
 def update_display_name(timestamp, new_name):
     try:
         with psycopg2.connect(DB_URL) as conn:
