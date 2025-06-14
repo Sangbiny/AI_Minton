@@ -15,14 +15,63 @@ init_db()
 def start():
     return render_template("start.html")
 
+#@app.route("/match", methods=["GET", "POST"])
+#def match():
+#    if request.method == "GET":
+#        return render_template("index.html", players=[], result="", game_counts={})
+#
+#    try:
+#        players = request.form["players"].strip().splitlines()
+#        players = [p.strip() for p in players if p.strip()]
+#
+#        if len(players) < 4:
+#            return render_template("index.html", players=players, result="플레이어가 최소 4명 필요합니다.", game_counts={})
+#
+#        # input.txt 저장
+#        with open("input.txt", "w", encoding="utf-8") as f:
+#            f.write("\n".join(players))
+#
+#        # C++ 매칭 실행
+#        os.system("./match")
+#
+#        # 결과 읽기
+#        result = ""
+#        if os.path.exists("result_of_match.txt"):
+#            with open("result_of_match.txt", "r", encoding="utf-8") as f:
+#                result = f.read()
+#
+#        game_counts = {}
+#        if os.path.exists("games_per_member.txt"):
+#            with open("games_per_member.txt", "r", encoding="utf-8") as f:
+#                for line in f:
+#                    name, count = line.strip().split()
+#                    game_counts[name] = count
+#
+#        # 기록 저장
+#        save_record(result, "\n".join([f"{k} {v}" for k, v in game_counts.items()]))
+#
+#        return render_template("index.html", players=players, result=result, game_counts=game_counts)
+#
+#    except Exception as e:
+#        logging.error(f"[ERROR /match POST] {e}")
+#        return "오류가 발생했습니다."
 @app.route("/match", methods=["GET", "POST"])
 def match():
     if request.method == "GET":
         return render_template("index.html", players=[], result="", game_counts={})
 
     try:
-        players = request.form["players"].strip().splitlines()
-        players = [p.strip() for p in players if p.strip()]
+        # 총 게임 수 (지금은 사용 안 하지만 필요하면 저장 가능)
+        total_game_count = int(request.form.get("total_game_count", 20))
+
+        # 최대 100명까지 검사
+        players = []
+        for i in range(1, 101):
+            name = request.form.get(f"name{i}")
+            gender = request.form.get(f"gender{i}")
+            level = request.form.get(f"level{i}")
+            if name:
+                players.append(f"{name} {gender} {level}")
 
         if len(players) < 4:
             return render_template("index.html", players=players, result="플레이어가 최소 4명 필요합니다.", game_counts={})
