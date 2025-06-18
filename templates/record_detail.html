@@ -83,13 +83,23 @@
                         {% for i in range(0, 4) %}
                             {% set name = cols[i] if cols|length > i else '' %}
                             {% set play_counts = play_counts.update({name: (play_counts[name]|default(0) + 1)}) or play_counts %}
-                            {% set strokes = ["一", "二", "三", "四", "五"] %}
+                            {% set partials = ["一", "丨", "丿", "丶", "乛"] %}
                             {% set count = play_counts[name] %}
-                            {% if count >= 5 %}
-                                {% set count_text = "正" * (count // 5) + strokes[count % 5 - 1] if count % 5 != 0 else "正" * (count // 5) %}
-                            {% else %}
-                                {% set count_text = strokes[count - 1] %}
-                            {% endif %}
+                            {% set count_text = "" %}
+                            {% for j in range(count) %}
+                                {% set cycle = j % 5 %}
+                                {% if cycle == 0 %}
+                                    {% set count_text = count_text + partials[0] %}
+                                {% elif cycle == 1 %}
+                                    {% set count_text = count_text[:-1] + "十" %}
+                                {% elif cycle == 2 %}
+                                    {% set count_text = count_text[:-1] + "丨" %}
+                                {% elif cycle == 3 %}
+                                    {% set count_text = count_text + "丨" %}
+                                {% elif cycle == 4 %}
+                                    {% set count_text = count_text[:-2] + "正" %}
+                                {% endif %}
+                            {% endfor %}
                             <td class="player-cell">
                                 <div class="player-wrapper">
                                     <div class="player-count">{{ count_text }}</div>
