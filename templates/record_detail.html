@@ -61,17 +61,13 @@
             <tbody>
                 {% for line in match_result.split('\n') if line.strip() %}
                 {% set cols = line.split() %}
-                {% set current_counts = per_game_play_counts[loop.index0] %}
                 <tr>
                     <td>제 {{ loop.index }} 경기</td>
                     {% for i in range(4) %}
                         <td>
                             {% if cols|length > i %}
-                                <span class="dogtag">
+                                <span class="dogtag">{{ cols[i] }}</span>
                                     {{ cols[i] }}
-                                    {% if cols[i] in current_counts %}
-                                    <span class="game-count">{{ current_counts[cols[i]] }}</span>
-                                    {% endif %}
                                 </span>
                             {% endif %}
                         </td>
