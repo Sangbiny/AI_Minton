@@ -1,53 +1,47 @@
 # db.py
 import os
-import shutil
+import json
 from datetime import datetime
 
-def save_match_data(players, result_text):
-    now = datetime.now().strftime("%Y%m%d_%H%M%S")
-    folder = os.path.join("records", now)
-    os.makedirs(folder, exist_ok=True)
+def save_record(match_result, game_counts):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    folder_path = f"records/{timestamp}"
+    os.makedirs(folder_path, exist_ok=True)
 
-    with open(os.path.join(folder, "players.txt"), "w") as f:
-        for player in players:
-            f.write(" ".join(player) + "\n")
+    # 결과 저장
+    with open(f"{folder_path}/result.txt", "w", encoding="utf-8") as f:
+        f.write(match_result)
 
-    with open(os.path.join(folder, "result.txt"), "w") as f:
-        f.write(result_text)
+    # 게임 수 저장
+    with open(f"{folder_path}/game_counts.json", "w", encoding="utf-8") as f:
+        json.dump(game_counts, f, ensure_ascii=False, indent=2)
 
-    return now
-
-def get_all_record_folders():
+def load_all_records():
     if not os.path.exists("records"):
         return []
     return sorted(os.listdir("records"), reverse=True)
 
-def delete_record_folder(folder):
-    path = os.path.join("records", folder)
-    if os.path.exists(path):
-        shutil.rmtree(path)
+def load_record_detail(folder_name):
+    result_path = f"records/{folder_name}/result.txt"
+    game_counts_path = f"records/{folder_name}/game_counts.json"
 
-def get_record_detail(folder_name):
-    folder_path = os.path.join("records", folder_name)
-    players_path = os.path.join(folder_path, "players.txt")
-    result_path = os.path.join(folder_path, "result.txt")
+    if not os.path.exists(result_path) or not os.path.exists(game_counts_path):
+        return None, None, None
 
-    if not os.path.exists(result_path):
-        raise FileNotFoundError("result.txt not found")
-
-    with open(result_path, "r") as f:
+    with open(result_path, "r", encoding="utf-8") as f:
         match_result = f.read()
 
-    game_counts = {}
-    per_game_play_counts = {}
+    with open(game_counts_path, "r", encoding="utf-8") as f:
+        game_counts = json.load(f)
 
-    for game_index, line in enumerate(match_result.splitlines()):
-        players = line.strip().split()
-        for name in players:
-            game_counts[name] = game_counts.get(name, 0) + 1
-            if name not in per_game_play_counts:
-                per_game_play_counts[name] = []
-            per_game_play_counts[name].append(game_counts[name])  # 각 경기에서의 n번째 경기 정보
+    # 경기별 개인별 게임 수 기록 생성
+    nth_game_counts = {}  # 예: {'홍길동': [1, 2, 3]}
+    for i, line in enumerate(match_result.splitlines(), start=1):
+        names = line.strip().split()
+        for name in names:
+            if name not in nth_game_counts:
+                nth_game_counts[name] = []
+            nth_game_counts[name].append(len(nth_game_counts[name]) + 1)
 
-    return match_result, game_counts, per_game_play_counts
+    return match_result, game_counts, nth_game_counts
 
