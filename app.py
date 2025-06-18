@@ -36,7 +36,7 @@ def match():
             return "매칭 실행 중 오류가 발생했습니다."
 
         try:
-            with open("output.txt", "r", encoding="utf-8") as f:
+            with open("result_of_match.txt", "r", encoding="utf-8") as f:
                 result = f.read()
         except FileNotFoundError:
             return "결과 파일을 찾을 수 없습니다."
