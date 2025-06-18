@@ -1,14 +1,26 @@
+# app.py
 import os
 import logging
 from flask import Flask, request, render_template, redirect, url_for
 from db import (
-    init_db, save_record, get_all_records, get_record_detail,
-    delete_record, update_display_name
+    init_db,
+    save_record,
+    get_all_records,
+    get_record_detail,
+    delete_record,
+    update_display_name
 )
 
 app = Flask(__name__)
-logging.basicConfig(filename="app.log", level=logging.INFO)
 
+# 로그 설정
+logging.basicConfig(
+    filename="app.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+# DB 초기화
 init_db()
 
 @app.route("/")
@@ -22,24 +34,31 @@ def match():
 @app.route("/match", methods=["POST"])
 def run_match():
     try:
+        total_game_count = request.form.get("total_game_count", "20")
         players = []
-        for i in range(1, 100):
+        i = 1
+        while True:
             name = request.form.get(f"name{i}")
             gender = request.form.get(f"gender{i}")
             level = request.form.get(f"level{i}")
             if name:
-                players.append({"name": name.strip(), "gender": gender, "level": level})
+                players.append(f"{name},{gender},{level}")
+                i += 1
+            else:
+                break
 
-        total_game_count = int(request.form.get("total_game_count", "0"))
+        if len(players) < 4:
+            return render_template("index.html", players=[], result="플레이어가 최소 4명 필요합니다.", game_counts={})
 
+        # input.txt 저장
         with open("input.txt", "w", encoding="utf-8") as f:
-            f.write(str(total_game_count) + "\n")
-            f.write(str(len(players)) + "\n")
-            for p in players:
-                f.write(f"{p['name']} {p['gender']} {p['level']}\n")
+            f.write(f"{total_game_count}\n")
+            f.write("\n".join(players))
 
+        # match 실행
         os.system("./match")
 
+        # 결과 읽기
         result = ""
         if os.path.exists("result_of_match.txt"):
             with open("result_of_match.txt", "r", encoding="utf-8") as f:
@@ -52,12 +71,14 @@ def run_match():
                     name, count = line.strip().split()
                     game_counts[name] = count
 
+        # DB 저장
         save_record(result, "\n".join([f"{k} {v}" for k, v in game_counts.items()]))
 
         return render_template("index.html", players=players, result=result, game_counts=game_counts)
+
     except Exception as e:
-        logging.error(f"[run_match] {e}")
-        return "오류 발생"
+        logging.error(f"[ERROR /match POST] {e}")
+        return "오류가 발생했습니다."
 
 @app.route("/records")
 def records():
@@ -65,42 +86,42 @@ def records():
         folders = get_all_records()
         return render_template("records.html", record_folders=folders)
     except Exception as e:
-        logging.error(f"[records] {e}")
+        logging.error(f"[ERROR /records] {e}")
         return "기록 불러오기 오류"
 
 @app.route("/records/<int:record_id>")
 def record_detail(record_id):
     try:
         match_result, game_counts = get_record_detail(record_id)
-        return render_template("record_detail.html", folder_name=record_id,
-                               match_result=match_result, game_counts=game_counts)
+        return render_template("record_detail.html", folder_name=record_id, match_result=match_result, game_counts=game_counts)
     except Exception as e:
-        logging.error(f"[record_detail] {e}")
+        logging.error(f"[ERROR /records/<id>] {e}")
         return "기록 상세 조회 오류"
 
 @app.route("/delete_record", methods=["POST"])
 def delete():
     try:
-        record_id = request.form.get("folder")
+        record_id = request.form.get("record_id")
         password = request.form.get("password")
         if password != "4568":
-            return "<script>alert('비밀번호가 틀렸습니다');history.back();</script>"
+            return "<script>alert('비밀번호가 틀렸습니다.'); history.back();</script>"
         delete_record(record_id)
         return redirect(url_for("records"))
     except Exception as e:
-        logging.error(f"[delete_record] {e}")
-        return "삭제 오류"
+        logging.error(f"[ERROR /delete_record] {e}")
+        return "삭제 중 오류 발생"
 
 @app.route("/rename_record", methods=["POST"])
 def rename():
     try:
-        record_id = request.form.get("folder")
+        record_id = request.form.get("record_id")
         new_name = request.form.get("new_name")
-        update_display_name(record_id, new_name)
+        if new_name:
+            update_display_name(record_id, new_name)
         return redirect(url_for("records"))
     except Exception as e:
-        logging.error(f"[rename_record] {e}")
-        return "이름 변경 오류"
+        logging.error(f"[ERROR /rename_record] {e}")
+        return "이름 변경 중 오류 발생"
 
 if __name__ == "__main__":
     app.run(debug=True)
