@@ -14,11 +14,11 @@ init_db()
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", players=[], result="", game_counts={})
 
 @app.route("/match", methods=["GET"])
 def match_page():
-    return render_template("index.html")
+    return redirect(url_for("index"))
 
 @app.route("/match", methods=["POST"])
 def run_match():
@@ -41,7 +41,7 @@ def run_match():
         logging.info(f"Players: {players}")
 
         if len(players) < 4:
-            return render_template("index.html", players=[], result="플레이어가 최소 4명 필요합니다.", game_counts={})
+            return render_template("index.html", players=players, result="플레이어가 최소 4명 필요합니다.", game_counts={})
 
         with open("input.txt", "w", encoding="utf-8") as f:
             f.write(f"{total_game_count}\n")
@@ -64,7 +64,7 @@ def run_match():
                     parts = line.strip().split()
                     if len(parts) == 2:
                         name, count = parts
-                        game_counts[name] = count
+                        game_counts[name] = int(count)
         else:
             logging.error("games_per_member.txt 파일이 없습니다.")
 
