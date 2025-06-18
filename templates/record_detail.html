@@ -83,9 +83,16 @@
                         {% for i in range(0, 4) %}
                             {% set name = cols[i] if cols|length > i else '' %}
                             {% set play_counts = play_counts.update({name: (play_counts[name]|default(0) + 1)}) or play_counts %}
+                            {% set strokes = ["一", "二", "三", "四", "五"] %}
+                            {% set count = play_counts[name] %}
+                            {% if count >= 5 %}
+                                {% set count_text = "正" * (count // 5) + strokes[count % 5 - 1] if count % 5 != 0 else "正" * (count // 5) %}
+                            {% else %}
+                                {% set count_text = strokes[count - 1] %}
+                            {% endif %}
                             <td class="player-cell">
                                 <div class="player-wrapper">
-                                    <div class="player-count">{{ "正" * play_counts[name] }}</div>
+                                    <div class="player-count">{{ count_text }}</div>
                                     <div class="player-name">{{ name }}</div>
                                 </div>
                             </td>
