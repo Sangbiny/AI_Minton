@@ -61,24 +61,20 @@ def get_all_records():
         print(f"[DB Error - get_all_records] {e}")
         return []
 
-def get_record_detail(timestamp):
+def get_record_detail(folder):
     try:
-        with psycopg2.connect(DB_URL) as conn:
-            with conn.cursor() as c:
-                c.execute("SELECT match_result, game_counts FROM records WHERE timestamp = %s", (timestamp,))
-                row = c.fetchone()
-                if row:
-                    match_result, game_counts_str = row
-                    game_counts = {}
-                    for line in game_counts_str.strip().split("\n"):
-                        name, count = line.strip().split()
-                        game_counts[name] = count
-                    return match_result, game_counts
-                else:
-                    return "", {}
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT match_result, game_counts FROM records WHERE timestamp = %s", (folder,))
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            return row[0], json.loads(row[1])
+        else:
+            return None, None
     except Exception as e:
         print(f"[DB Error - get_record_detail] {e}")
-        return "", {}
+        return None, None
 
 def delete_record(timestamp):
     try:

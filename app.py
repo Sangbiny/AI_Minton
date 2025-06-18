@@ -81,10 +81,18 @@ def records():
 def record_detail(folder):
     try:
         match_result, game_counts = get_record_detail(folder)
-        return render_template("record_detail.html", folder_name=folder, match_result=match_result, game_counts=game_counts)
+
+        if match_result is None or game_counts is None:
+            raise ValueError("match_result or game_counts is None")
+
+        return render_template("record_detail.html",
+                               folder_name=folder,
+                               match_result=match_result,
+                               game_counts=game_counts)
     except Exception as e:
         logging.error(f"[ERROR /records/<folder>] {e}")
         return "기록 상세 조회 오류"
+
 
 @app.route("/delete_record", methods=["POST"])
 def delete():
