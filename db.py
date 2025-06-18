@@ -22,7 +22,7 @@ def load_all_records():
     return sorted(os.listdir("records"), reverse=True)
 
 def load_record_detail(folder_name):
-    folder_path = f"records/{folder_name}"  # ✅ 경로 보정
+    folder_path = f"{folder_name}"  # ✅ 경로 보정
 
     result_path = f"{folder_path}/result.txt"  # ✅ 파일명 일치
     game_counts_path = f"{folder_path}/game_counts.json"
