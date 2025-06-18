@@ -80,17 +80,14 @@ def records():
 @app.route("/records/<folder>")
 def record_detail(folder):
     try:
-        match_result, game_counts = get_record_detail(folder)
-
-        if match_result is None or game_counts is None:
-            raise ValueError("match_result or game_counts is None")
-
-        return render_template("record_detail.html",
-                               folder_name=folder,
-                               match_result=match_result,
-                               game_counts=game_counts)
+        match_result, game_counts_raw = get_record_detail(folder)
+        if isinstance(game_counts_raw, str):
+            game_counts = json.loads(game_counts_raw)
+        else:
+            game_counts = game_counts_raw
+        return render_template("record_detail.html", folder_name=folder, match_result=match_result, game_counts=game_counts)
     except Exception as e:
-        logging.error(f"[ERROR /records/<folder>] {e}")
+        app.logger.error(f"[ERROR /records/<folder>] {e}")
         return "기록 상세 조회 오류"
 
 
