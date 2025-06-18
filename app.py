@@ -123,6 +123,63 @@ def rename():
         logging.error(f"[ERROR /rename_record] {e}")
         return "이름 변경 중 오류 발생"
 
+@app.route("/match", methods=["POST"])
+def run_match():
+    try:
+        total_game_count = request.form.get("total_game_count", "20")
+        logging.info(f"Total Game Count: {total_game_count}")
+
+        players = []
+        i = 1
+        while True:
+            name = request.form.get(f"name{i}")
+            gender = request.form.get(f"gender{i}")
+            level = request.form.get(f"level{i}")
+            if name:
+                players.append(f"{name},{gender},{level}")
+                i += 1
+            else:
+                break
+
+        logging.info(f"Players: {players}")
+
+        if len(players) < 4:
+            return render_template("index.html", players=[], result="플레이어가 최소 4명 필요합니다.", game_counts={})
+
+        with open("input.txt", "w", encoding="utf-8") as f:
+            f.write(f"{total_game_count}\n")
+            f.write("\n".join(players))
+
+        logging.info("input.txt 작성 완료. match 실행 시작")
+        os.system("./match")
+
+        result = ""
+        if os.path.exists("result_of_match.txt"):
+            with open("result_of_match.txt", "r", encoding="utf-8") as f:
+                result = f.read()
+        else:
+            logging.error("result_of_match.txt 파일이 없습니다.")
+
+        game_counts = {}
+        if os.path.exists("games_per_member.txt"):
+            with open("games_per_member.txt", "r", encoding="utf-8") as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) == 2:
+                        name, count = parts
+                        game_counts[name] = count
+        else:
+            logging.error("games_per_member.txt 파일이 없습니다.")
+
+        save_record(result, "\n".join([f"{k} {v}" for k, v in game_counts.items()]))
+
+        return render_template("index.html", players=players, result=result, game_counts=game_counts)
+
+    except Exception as e:
+        logging.error(f"[ERROR /match POST] {e}")
+        return "오류가 발생했습니다."
+
+
 if __name__ == "__main__":
     app.run(debug=True)
 
