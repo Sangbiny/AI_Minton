@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, render_template, request, redirect, url_for
 import subprocess
 import os
@@ -36,7 +35,7 @@ def match():
             return "매칭 실행 중 오류가 발생했습니다."
 
         try:
-            with open("result_of_match.txt", "r", encoding="utf-8") as f:
+            with open("result.txt", "r", encoding="utf-8") as f:  # ✅ 경로 수정
                 result = f.read()
         except FileNotFoundError:
             return "결과 파일을 찾을 수 없습니다."
