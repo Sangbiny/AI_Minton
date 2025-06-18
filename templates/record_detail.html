@@ -75,16 +75,16 @@
                 </tr>
             </thead>
             <tbody>
-                {% set play_counts = {} %}
+                {% set ns = namespace(play_counts={}) %}
+                {% set symbols = ["一", "丁", "下", "止", "正"] %}
                 {% for line in match_result.split('\n') if line.strip() %}
                     {% set cols = line.split() %}
                     <tr>
                         <td>제 {{ loop.index }} 경기</td>
                         {% for i in range(0, 4) %}
                             {% set name = cols[i] if cols|length > i else '' %}
-                            {% set play_counts = play_counts.update({name: (play_counts[name]|default(0) + 1)}) or play_counts %}
-                            {% set count = play_counts[name] %}
-                            {% set symbols = ["一", "丁", "下", "止", "正"] %}
+                            {% set ns.play_counts[name] = ns.play_counts.get(name, 0) + 1 %}
+                            {% set count = ns.play_counts[name] %}
                             {% set count_text = "" %}
                             {% for j in range(count) %}
                                 {% set cycle = j % 5 %}
@@ -97,8 +97,7 @@
                                 {% elif cycle == 3 %}
                                     {% set count_text = count_text[:-1] + symbols[3] %}
                                 {% elif cycle == 4 %}
-                                    {% set count_text = count_text[:-1] + symbols[4] %}
-                                    {% set count_text = count_text + symbols[0] %}
+                                    {% set count_text = count_text[:-1] + symbols[4] + symbols[0] %}
                                 {% endif %}
                             {% endfor %}
                             <td class="player-cell">
@@ -139,6 +138,5 @@
 {% else %}
 <p>기록 파일을 찾을 수 없습니다.</p>
 {% endif %}
-
 {% endblock %}
 
