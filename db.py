@@ -22,8 +22,8 @@ def load_all_records():
     return sorted(os.listdir("records"), reverse=True)
 
 def load_record_detail(folder_name):
-    result_path = f"records/{folder_name}/result.txt"
-    game_counts_path = f"records/{folder_name}/game_counts.json"
+    result_path = f"{folder_name}/result_of_match.txt"
+    game_counts_path = f"{folder_name}/game_counts.json"
 
     if not os.path.exists(result_path) or not os.path.exists(game_counts_path):
         return None, None, None
