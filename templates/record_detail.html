@@ -1,110 +1,54 @@
 {% extends "base.html" %}
-
 {% block content %}
 <style>
-    .result-container {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        gap: 40px;
-        margin-top: 30px;
-    }
-    table {
-        margin-top: 20px;
-        border-collapse: separate;
-        border-spacing: 12px 10px;
-    }
-    th {
-        padding: 6px;
-        background-color: #f0f0f0;
-        font-weight: bold;
-        border-radius: 8px;
-    }
     .player-cell {
+        position: relative;
         padding: 10px;
         border-radius: 12px;
         border: 1px solid #ccc;
-        background-color: #fdfdfd;
-        position: relative;
-        width: 100px;
-        height: 60px;
-        vertical-align: top;
+        width: 80px;
+        height: 50px;
     }
-    .player-wrapper {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-    .player-count {
+    .tick-overlay {
         position: absolute;
-        top: 4px;
+        top: 2px;
         right: 6px;
         font-size: 10px;
-        color: #999;
-        font-family: monospace;
-    }
-    .player-name {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        font-weight: bold;
+        color: #666;
     }
 </style>
 
-<!-- 상단 링크 및 폴더 이름 -->
-<div>
-    <a href="/records" style="font-size: 18px; text-decoration: none;">📂 운동 기록 보기</a>
-    <div class="folder-name" style="font-size:30px; font-weight: bold;">&lt;{{ folder_name }}&gt;</div>
-</div>
-
-<h1>참가자 명단</h1>
+<a href="/records">📂 운동 기록 보기</a>
+<h2><{{ folder_name }}></h2>
 
 {% if match_result %}
 <div class="result-container">
-    <div style="flex: 1; min-width: 400px;">
+    <div style="flex: 1;">
         <h2>매칭 결과</h2>
         <table>
             <thead>
                 <tr>
-                    <th style="width: 120px;">경기</th>
-                    <th style="width: 80px;">선수1</th>
-                    <th style="width: 80px;">선수2</th>
-                    <th style="width: 80px;">선수3</th>
-                    <th style="width: 80px;">선수4</th>
+                    <th>경기</th>
+                    <th>선수1</th>
+                    <th>선수2</th>
+                    <th>선수3</th>
+                    <th>선수4</th>
                 </tr>
             </thead>
             <tbody>
-                {% set play_counts = {} %}
-                {% for line in match_result.split('\n') if line.strip() %}
-                    {% set cols = line.split() %}
+                {% set counter = {} %}
+                {% for line in match_result.strip().splitlines() %}
+                    {% set cols = line.strip().split() %}
                     <tr>
                         <td>제 {{ loop.index }} 경기</td>
-                        {% for i in range(0, 4) %}
-                            {% set name = cols[i] if cols|length > i else '' %}
-                            {% set play_counts = play_counts.update({name: (play_counts[name]|default(0) + 1)}) or play_counts %}
-                            {% set count = play_counts[name] %}
-                            {% set symbols = ["一", "丨", "丶", "フ", "正"] %}
-                            {% set count_text = "" %}
-                            {% for j in range(count) %}
-                                {% set cycle = j % 5 %}
-                                {% if cycle == 0 %}
-                                    {% set count_text = count_text + symbols[0] %}
-                                {% elif cycle == 1 %}
-                                    {% set count_text = count_text[:-1] + symbols[1] %}
-                                {% elif cycle == 2 %}
-                                    {% set count_text = count_text[:-1] + symbols[2] %}
-                                {% elif cycle == 3 %}
-                                    {% set count_text = count_text[:-1] + symbols[3] %}
-                                {% elif cycle == 4 %}
-                                    {% set count_text = count_text[:-1] + symbols[4] %}
-                                    {% set count_text = count_text + symbols[0] %}
-                                {% endif %}
-                            {% endfor %}
-                            <td class="player-cell">
-                                <div class="player-wrapper">
-                                    <div class="player-count">{{ count_text }}</div>
-                                    <div class="player-name">{{ name }}</div>
+                        {% for name in cols %}
+                            {% set counter = counter.update({name: counter.get(name, 0) + 1}) or counter %}
+                            <td>
+                                <div class="player-cell">
+                                    <span class="tick-overlay">
+                                        {{ '正' * (counter[name] // 5) ~ ['一','丨','丶','丨'][(counter[name]-1)%5] if counter[name] > 0 else '' }}
+                                    </span>
+                                    {{ name }}
                                 </div>
                             </td>
                         {% endfor %}
@@ -114,23 +58,20 @@
         </table>
     </div>
 
-    <div style="min-width: 600px;">
-        <h2 style="margin-bottom: 10px;">멤버별 게임 수</h2>
-        {% if game_counts %}
-            <p>game_counts type: {{ game_counts.__class__.__name__ }}</p>
-            <ul>
+    <div>
+        <h2>멤버별 게임 수</h2>
+        <table>
+            <thead><tr><th>이름</th><th>게임 수</th></tr></thead>
+            <tbody>
             {% for name, count in game_counts.items() %}
-                <li>{{ name }}: {{ count }}</li>
+                <tr><td>{{ name }}</td><td>{{ count }}</td></tr>
             {% endfor %}
-            </ul>
-        {% else %}
-            <p>game_counts가 비어있습니다.</p>
-        {% endif %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% else %}
-<p>기록 파일을 찾을 수 없습니다.</p>
+<p>기록을 찾을 수 없습니다.</p>
 {% endif %}
-
 {% endblock %}
 
