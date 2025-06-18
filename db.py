@@ -9,7 +9,7 @@ def save_record(match_result, game_counts):
     os.makedirs(folder_path, exist_ok=True)
 
     # 결과 저장
-    with open(f"{folder_path}/result.txt", "w", encoding="utf-8") as f:
+    with open(f"{folder_path}/result_of_match.txt", "w", encoding="utf-8") as f:
         f.write(match_result)
 
     # 게임 수 저장
