@@ -5,7 +5,7 @@ from datetime import datetime
 
 def save_record(match_result, game_counts):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    folder_path = f"records/{timestamp}"
+    folder_path = f"{timestamp}"
     os.makedirs(folder_path, exist_ok=True)
 
     # 결과 저장
