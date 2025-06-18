@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% block content %}
 <style>
     .result-container {
@@ -51,6 +52,7 @@
     }
 </style>
 
+<!-- 상단 링크 및 폴더 이름 -->
 <div>
     <a href="/records" style="font-size: 18px; text-decoration: none;">📂 운동 기록 보기</a>
     <div class="folder-name" style="font-size:30px; font-weight: bold;">&lt;{{ folder_name }}&gt;</div>
@@ -80,19 +82,28 @@
                         <td>제 {{ loop.index }} 경기</td>
                         {% for i in range(0, 4) %}
                             {% set name = cols[i] if cols|length > i else '' %}
-                            {% set count = (play_counts[name] if name in play_counts else 0) + 1 %}
-                            {% set _ = play_counts.update({name: count}) %}
-                            {% set cycle = count % 5 %}
-                            {% set bar = "" %}
-                            {% if cycle == 1 %} {% set bar = "一" %}
-                            {% elif cycle == 2 %} {% set bar = "丨" %}
-                            {% elif cycle == 3 %} {% set bar = "丿" %}
-                            {% elif cycle == 4 %} {% set bar = "丶" %}
-                            {% elif cycle == 0 and count != 0 %} {% set bar = "正" %}
-                            {% endif %}
+                            {% set play_counts = play_counts.update({name: (play_counts[name]|default(0) + 1)}) or play_counts %}
+                            {% set count = play_counts[name] %}
+                            {% set symbols = ["一", "丁", "下", "止", "正"] %}
+                            {% set count_text = "" %}
+                            {% for j in range(count) %}
+                                {% set cycle = j % 5 %}
+                                {% if cycle == 0 %}
+                                    {% set count_text = count_text + symbols[0] %}
+                                {% elif cycle == 1 %}
+                                    {% set count_text = count_text[:-1] + symbols[1] %}
+                                {% elif cycle == 2 %}
+                                    {% set count_text = count_text[:-1] + symbols[2] %}
+                                {% elif cycle == 3 %}
+                                    {% set count_text = count_text[:-1] + symbols[3] %}
+                                {% elif cycle == 4 %}
+                                    {% set count_text = count_text[:-1] + symbols[4] %}
+                                    {% set count_text = count_text + symbols[0] %}
+                                {% endif %}
+                            {% endfor %}
                             <td class="player-cell">
                                 <div class="player-wrapper">
-                                    <div class="player-count">{{ bar }}</div>
+                                    <div class="player-count">{{ count_text }}</div>
                                     <div class="player-name">{{ name }}</div>
                                 </div>
                             </td>
@@ -128,5 +139,6 @@
 {% else %}
 <p>기록 파일을 찾을 수 없습니다.</p>
 {% endif %}
+
 {% endblock %}
 
