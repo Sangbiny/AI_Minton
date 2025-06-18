@@ -6,7 +6,6 @@ from datetime import datetime
 def get_db_connection():
     return psycopg2.connect(os.environ["DATABASE_URL"], sslmode='require')
 
-
 def init_db():
     try:
         conn = get_db_connection()
@@ -25,7 +24,6 @@ def init_db():
     except Exception as e:
         print(f"[DB Error - init_db] {e}")
 
-
 def save_record(match_result, game_counts):
     try:
         conn = get_db_connection()
@@ -34,7 +32,6 @@ def save_record(match_result, game_counts):
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         date = timestamp.split("_")[0]
 
-        # 중복 확인 및 display_name 생성
         cur.execute("SELECT display_name FROM records WHERE display_name LIKE %s", (f"{date} 운동%",))
         existing_names = [row[0] for row in cur.fetchall()]
         if f"{date} 운동" not in existing_names:
@@ -54,7 +51,6 @@ def save_record(match_result, game_counts):
     except Exception as e:
         print(f"[DB Error - save_record] {e}")
 
-
 def get_all_records():
     try:
         conn = get_db_connection()
@@ -66,7 +62,6 @@ def get_all_records():
     except Exception as e:
         print(f"[DB Error - get_all_records] {e}")
         return []
-
 
 def get_record_detail(record_id):
     try:
@@ -91,7 +86,6 @@ def get_record_detail(record_id):
         print(f"[DB Error - get_record_detail] {e}")
         return "", {}
 
-
 def delete_record(record_id):
     try:
         conn = get_db_connection()
@@ -101,4 +95,14 @@ def delete_record(record_id):
         conn.close()
     except Exception as e:
         print(f"[DB Error - delete_record] {e}")
+
+def update_display_name(record_id, new_name):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE records SET display_name = %s WHERE id = %s;", (new_name, record_id))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[DB Error - update_display_name] {e}")
 
