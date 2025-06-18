@@ -8,6 +8,25 @@
         gap: 40px;
         margin-top: 30px;
     }
+    .dogtag {
+        display: inline-block;
+        position: relative;
+        padding: 6px 10px;
+        border: 2px solid #333;
+        border-radius: 10px;
+        background-color: #f0f0f0;
+        margin: 2px;
+    }
+    .game-count {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background-color: #ffc107;
+        border-radius: 50%;
+        padding: 3px 6px;
+        font-size: 11px;
+        font-weight: bold;
+    }
     table {
         margin-top: 20px;
         border-collapse: collapse;
@@ -16,30 +35,6 @@
         border: 1px solid black;
         padding: 5px;
         text-align: center;
-    }
-    .folder-name {
-        font-size: 24px;
-        margin-top: 8px;
-        margin-bottom: 20px;
-    }
-    .dogtag {
-        position: relative;
-        display: inline-block;
-        border: 2px solid #444;
-        border-radius: 10px;
-        padding: 6px 10px;
-        background-color: #f0f0f0;
-        font-weight: bold;
-    }
-    .game-count {
-        position: absolute;
-        top: -6px;
-        right: -6px;
-        background-color: #ffc107;
-        border-radius: 50%;
-        font-size: 12px;
-        font-weight: bold;
-        padding: 3px 6px;
     }
 </style>
 
@@ -57,26 +52,29 @@
             <thead>
                 <tr>
                     <th style="width: 120px;">경기</th>
-                    <th style="width: 100px;">선수1</th>
-                    <th style="width: 100px;">선수2</th>
-                    <th style="width: 100px;">선수3</th>
-                    <th style="width: 100px;">선수4</th>
+                    <th style="width: 80px;">선수1</th>
+                    <th style="width: 80px;">선수2</th>
+                    <th style="width: 80px;">선수3</th>
+                    <th style="width: 80px;">선수4</th>
                 </tr>
             </thead>
             <tbody>
                 {% for line in match_result.split('\n') if line.strip() %}
                 {% set cols = line.split() %}
+                {% set current_counts = per_game_play_counts[loop.index0] %}
                 <tr>
                     <td>제 {{ loop.index }} 경기</td>
-                    {% for name in cols %}
-                    <td>
-                        <div class="dogtag">
-                            {{ name }}
-                            {% if name in game_counts %}
-                            <span class="game-count">{{ game_counts[name] }}</span>
+                    {% for i in range(4) %}
+                        <td>
+                            {% if cols|length > i %}
+                                <span class="dogtag">
+                                    {{ cols[i] }}
+                                    {% if cols[i] in current_counts %}
+                                    <span class="game-count">{{ current_counts[cols[i]] }}</span>
+                                    {% endif %}
+                                </span>
                             {% endif %}
-                        </div>
-                    </td>
+                        </td>
                     {% endfor %}
                 </tr>
                 {% endfor %}
@@ -85,7 +83,6 @@
     </div>
     <div style="min-width: 600px;">
         <h2 style="margin-bottom: 10px;">멤버별 게임 수</h2>
-        {% if game_counts %}
         <table>
             <thead>
                 <tr>
@@ -102,7 +99,6 @@
                 {% endfor %}
             </tbody>
         </table>
-        {% endif %}
     </div>
 </div>
 {% else %}

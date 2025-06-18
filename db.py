@@ -1,77 +1,53 @@
 # db.py
 import os
-import psycopg2
+import shutil
 from datetime import datetime
 
-DB_URL = os.environ.get("DATABASE_URL")
+def save_match_data(players, result_text):
+    now = datetime.now().strftime("%Y%m%d_%H%M%S")
+    folder = os.path.join("records", now)
+    os.makedirs(folder, exist_ok=True)
 
-# DB 초기화 함수
-def init_db():
-    try:
-        with psycopg2.connect(DB_URL) as conn:
-            with conn.cursor() as c:
-                c.execute("""
-                CREATE TABLE IF NOT EXISTS records (
-                    id SERIAL PRIMARY KEY,
-                    timestamp TEXT NOT NULL,
-                    match_result TEXT NOT NULL,
-                    game_counts TEXT NOT NULL
-                )
-                """)
-                conn.commit()
-    except Exception as e:
-        print(f"[DB Error - init_db] {e}")
+    with open(os.path.join(folder, "players.txt"), "w") as f:
+        for player in players:
+            f.write(" ".join(player) + "\n")
 
-# 기록 저장 함수
-def save_record(match_result, game_counts):
-    try:
-        with psycopg2.connect(DB_URL) as conn:
-            with conn.cursor() as c:
-                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                c.execute("INSERT INTO records (timestamp, match_result, game_counts) VALUES (%s, %s, %s)",
-                          (timestamp, match_result, game_counts))
-                conn.commit()
-    except Exception as e:
-        print(f"[DB Error - save_record] {e}")
+    with open(os.path.join(folder, "result.txt"), "w") as f:
+        f.write(result_text)
 
-# 전체 기록 가져오기
-def get_all_records():
-    try:
-        with psycopg2.connect(DB_URL) as conn:
-            with conn.cursor() as c:
-                c.execute("SELECT timestamp FROM records ORDER BY id DESC")
-                return [row[0] for row in c.fetchall()]
-    except Exception as e:
-        print(f"[DB Error - get_all_records] {e}")
+    return now
+
+def get_all_record_folders():
+    if not os.path.exists("records"):
         return []
+    return sorted(os.listdir("records"), reverse=True)
 
-# 특정 기록 상세 조회
-def get_record_detail(timestamp):
-    try:
-        with psycopg2.connect(DB_URL) as conn:
-            with conn.cursor() as c:
-                c.execute("SELECT match_result, game_counts FROM records WHERE timestamp = %s", (timestamp,))
-                row = c.fetchone()
-                if row:
-                    match_result, game_counts_str = row
-                    game_counts = {}
-                    for line in game_counts_str.strip().split("\n"):
-                        name, count = line.strip().split()
-                        game_counts[name] = count
-                    return match_result, game_counts
-                else:
-                    return "", {}
-    except Exception as e:
-        print(f"[DB Error - get_record_detail] {e}")
-        return "", {}
+def delete_record_folder(folder):
+    path = os.path.join("records", folder)
+    if os.path.exists(path):
+        shutil.rmtree(path)
 
-# 기록 삭제 함수
-def delete_record(timestamp):
-    try:
-        with psycopg2.connect(DB_URL) as conn:
-            with conn.cursor() as c:
-                c.execute("DELETE FROM records WHERE timestamp = %s", (timestamp,))
-                conn.commit()
-    except Exception as e:
-        print(f"[DB Error - delete_record] {e}")
+def get_record_detail(folder_name):
+    folder_path = os.path.join("records", folder_name)
+    players_path = os.path.join(folder_path, "players.txt")
+    result_path = os.path.join(folder_path, "result.txt")
+
+    if not os.path.exists(result_path):
+        raise FileNotFoundError("result.txt not found")
+
+    with open(result_path, "r") as f:
+        match_result = f.read()
+
+    game_counts = {}
+    per_game_play_counts = {}
+
+    for game_index, line in enumerate(match_result.splitlines()):
+        players = line.strip().split()
+        for name in players:
+            game_counts[name] = game_counts.get(name, 0) + 1
+            if name not in per_game_play_counts:
+                per_game_play_counts[name] = []
+            per_game_play_counts[name].append(game_counts[name])  # 각 경기에서의 n번째 경기 정보
+
+    return match_result, game_counts, per_game_play_counts
 
