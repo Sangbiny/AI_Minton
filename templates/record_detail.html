@@ -8,6 +8,8 @@
         border: 1px solid #ccc;
         width: 80px;
         height: 50px;
+        font-weight: bold;
+        background-color: #fff;
     }
     .tick-overlay {
         position: absolute;
@@ -15,6 +17,7 @@
         right: 6px;
         font-size: 10px;
         color: #666;
+        white-space: nowrap;
     }
 </style>
 
@@ -43,11 +46,11 @@
                         <td>제 {{ loop.index }} 경기</td>
                         {% for name in cols %}
                             {% set counter = counter.update({name: counter.get(name, 0) + 1}) or counter %}
+                            {% set total = counter[name] %}
+                            {% set tick = ('|' * (total % 5)) ~ (' ' + '|' * (total // 5) if total > 5 else '') %}
                             <td>
                                 <div class="player-cell">
-                                    <span class="tick-overlay">
-                                        {{ '正' * (counter[name] // 5) ~ ['一','丨','丶','丨'][(counter[name]-1)%5] if counter[name] > 0 else '' }}
-                                    </span>
+                                    <span class="tick-overlay">{{ tick.strip() }}</span>
                                     {{ name }}
                                 </div>
                             </td>
