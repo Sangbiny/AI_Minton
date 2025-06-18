@@ -55,7 +55,7 @@ def records():
     folders = load_all_records()
     return render_template("records.html", record_folders=folders)
 
-@app.route("/records/<folder_name>")
+@app.route("/<folder_name>")
 def record_detail(folder_name):
     result, game_counts, nth_game_counts = load_record_detail(folder_name)
     return render_template(
@@ -74,7 +74,7 @@ def delete_record():
     if password == "mju":
         try:
             import shutil
-            shutil.rmtree(f"records/{folder}")
+            shutil.rmtree(f"{folder}")
         except Exception:
             return "삭제 중 오류가 발생했습니다."
         return redirect(url_for("records"))
