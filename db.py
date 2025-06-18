@@ -3,106 +3,75 @@ import os
 import psycopg2
 from datetime import datetime
 
-def get_db_connection():
-    return psycopg2.connect(os.environ["DATABASE_URL"], sslmode='require')
+DB_URL = os.environ.get("DATABASE_URL")
 
+# DB 초기화 함수
 def init_db():
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS records (
-                id SERIAL PRIMARY KEY,
-                timestamp TEXT NOT NULL,
-                match_result TEXT,
-                game_counts TEXT,
-                display_name TEXT
-            );
-        """)
-        conn.commit()
-        conn.close()
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                c.execute("""
+                CREATE TABLE IF NOT EXISTS records (
+                    id SERIAL PRIMARY KEY,
+                    timestamp TEXT NOT NULL,
+                    match_result TEXT NOT NULL,
+                    game_counts TEXT NOT NULL
+                )
+                """)
+                conn.commit()
     except Exception as e:
         print(f"[DB Error - init_db] {e}")
 
+# 기록 저장 함수
 def save_record(match_result, game_counts):
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        date = timestamp.split("_")[0]
-
-        cur.execute("SELECT display_name FROM records WHERE display_name LIKE %s", (f"{date} 운동%",))
-        existing_names = [row[0] for row in cur.fetchall()]
-        if f"{date} 운동" not in existing_names:
-            display_name = f"{date} 운동"
-        else:
-            i = 2
-            while f"{date} 운동({i})" in existing_names:
-                i += 1
-            display_name = f"{date} 운동({i})"
-
-        cur.execute("""
-            INSERT INTO records (timestamp, match_result, game_counts, display_name)
-            VALUES (%s, %s, %s, %s);
-        """, (timestamp, match_result, game_counts, display_name))
-        conn.commit()
-        conn.close()
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                c.execute("INSERT INTO records (timestamp, match_result, game_counts) VALUES (%s, %s, %s)",
+                          (timestamp, match_result, game_counts))
+                conn.commit()
     except Exception as e:
         print(f"[DB Error - save_record] {e}")
 
+# 전체 기록 가져오기
 def get_all_records():
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT id, display_name FROM records ORDER BY id DESC;")
-        result = cur.fetchall()
-        conn.close()
-        return result
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                c.execute("SELECT timestamp FROM records ORDER BY id DESC")
+                return [row[0] for row in c.fetchall()]
     except Exception as e:
         print(f"[DB Error - get_all_records] {e}")
         return []
 
-def get_record_detail(record_id):
+# 특정 기록 상세 조회
+def get_record_detail(timestamp):
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT match_result, game_counts FROM records WHERE id = %s;", (record_id,))
-        row = cur.fetchone()
-        conn.close()
-
-        if row:
-            match_result = row[0] or ""
-            game_counts_text = row[1] or ""
-            game_counts = {
-                line.split()[0]: line.split()[1]
-                for line in game_counts_text.strip().splitlines()
-                if len(line.strip().split()) == 2
-            }
-            return match_result, game_counts
-        else:
-            return "", {}
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                c.execute("SELECT match_result, game_counts FROM records WHERE timestamp = %s", (timestamp,))
+                row = c.fetchone()
+                if row:
+                    match_result, game_counts_str = row
+                    game_counts = {}
+                    for line in game_counts_str.strip().split("\n"):
+                        name, count = line.strip().split()
+                        game_counts[name] = count
+                    return match_result, game_counts
+                else:
+                    return "", {}
     except Exception as e:
         print(f"[DB Error - get_record_detail] {e}")
         return "", {}
 
-def delete_record(record_id):
+# 기록 삭제 함수
+def delete_record(timestamp):
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("DELETE FROM records WHERE id = %s;", (record_id,))
-        conn.commit()
-        conn.close()
+        with psycopg2.connect(DB_URL) as conn:
+            with conn.cursor() as c:
+                c.execute("DELETE FROM records WHERE timestamp = %s", (timestamp,))
+                conn.commit()
     except Exception as e:
         print(f"[DB Error - delete_record] {e}")
-
-def update_display_name(record_id, new_name):
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("UPDATE records SET display_name = %s WHERE id = %s;", (new_name, record_id))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"[DB Error - update_display_name] {e}")
 

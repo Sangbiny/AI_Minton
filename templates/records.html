@@ -16,24 +16,16 @@
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
-    .record-label {
+    .record-entry a {
         font-size: 18px;
-        font-weight: bold;
-        color: #333;
         text-decoration: none;
-        margin-right: 20px;
+        color: #333;
+        font-weight: bold;
     }
-    .record-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
+    .record-entry form {
+        margin: 0;
     }
-    .record-actions input[type="text"],
-    .record-actions input[type="password"] {
-        padding: 6px 8px;
-        font-size: 14px;
-    }
-    .record-actions button {
+    .record-entry button {
         padding: 6px 12px;
         font-size: 14px;
         background-color: #ff4d4d;
@@ -42,33 +34,30 @@
         border-radius: 5px;
         cursor: pointer;
     }
-    .record-actions button.rename {
-        background-color: #4CAF50;
+    .empty-message {
+        margin-top: 40px;
+        font-size: 18px;
+        color: #777;
+        text-align: center;
     }
 </style>
 
 <h1>📂 운동 기록 보기</h1>
-
 <div class="record-list">
-    {% for record in record_folders %}
-    <div class="record-entry">
-        <a class="record-label" href="/records/{{ record[0] }}">{{ record[1] }}</a>
-        <div class="record-actions">
-            <!-- 이름 변경 -->
-            <form action="/rename_record" method="POST">
-                <input type="hidden" name="record_id" value="{{ record[0] }}">
-                <input type="text" name="new_name" placeholder="새 이름" required>
-                <button type="submit" class="rename">이름 변경</button>
-            </form>
-            <!-- 삭제 -->
+    {% if record_folders %}
+        {% for folder in record_folders %}
+        <div class="record-entry">
+            <a href="/records/{{ folder }}">{{ folder }}</a>
             <form action="/delete_record" method="POST">
-                <input type="hidden" name="record_id" value="{{ record[0] }}">
+                <input type="hidden" name="folder" value="{{ folder }}">
                 <input type="password" name="password" placeholder="비밀번호" required>
                 <button type="submit">삭제</button>
             </form>
         </div>
-    </div>
-    {% endfor %}
+        {% endfor %}
+    {% else %}
+        <div class="empty-message">저장된 운동 기록이 없습니다.</div>
+    {% endif %}
 </div>
 {% endblock %}
 
