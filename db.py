@@ -61,20 +61,20 @@ def get_all_records():
         print(f"[DB Error - get_all_records] {e}")
         return []
 
-def get_record_detail(folder):
+def get_record_detail(folder_id):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT match_result, game_counts FROM records WHERE timestamp = %s", (folder,))
+        cur.execute("SELECT match_result, game_counts FROM records WHERE id = %s;", (folder_id,))
         row = cur.fetchone()
         conn.close()
         if row:
-            return row[0], json.loads(row[1])
+            return row[0], {line.split()[0]: line.split()[1] for line in row[1].splitlines() if line.strip()}
         else:
-            return None, None
+            return None, {}
     except Exception as e:
         print(f"[DB Error - get_record_detail] {e}")
-        return None, None
+        return None, {}
 
 def delete_record(timestamp):
     try:
