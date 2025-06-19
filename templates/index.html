@@ -1,55 +1,121 @@
 {% extends "base.html" %}
 {% block content %}
+{% if not match_result %}
+<style>
+    .form-container {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .form-header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    .form-header label {
+        font-weight: bold;
+        font-size: 18px;
+    }
+    .player-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .player-table th, .player-table td {
+        padding: 8px;
+        border: 1px solid #ccc;
+        text-align: center;
+    }
+    .player-table th {
+        background-color: #333;
+        color: white;
+    }
+    .player-row input,
+    .player-row select {
+        width: 100%;
+        padding: 4px;
+        font-size: 14px;
+    }
+</style>
 
-<!-- 기존 참가자 입력 폼 -->
-<form method="post" action="{{ url_for('match') }}">
-    <div>
-        <label for="total_game_count">총 경기 수:</label>
-        <input type="number" name="total_game_count" required>
-    </div>
-    <div id="players">
-        <div>
-            <input type="text" name="name1" placeholder="이름">
-            <select name="gender1">
-                <option value="M">남</option>
-                <option value="F">여</option>
-            </select>
-            <select name="level1">
-                <option value="1">하</option>
-                <option value="2">중</option>
-                <option value="3">상</option>
-            </select>
+<h1>게임 참가자 입력</h1>
+<form action="/match" method="POST">
+    <div class="form-container">
+        <div class="form-header">
+            <label for="total_game_count">총 게임 수:</label>
+            <input type="number" name="total_game_count" value="20" min="1" max="100">
+            <button type="button" onclick="addPlayerField()">선수 추가</button>
+            <button type="submit">매칭 실행</button>
         </div>
+
+        <table class="player-table">
+            <thead>
+                <tr>
+                    <th>번호</th>
+                    <th>이름</th>
+                    <th>성별</th>
+                    <th>급수</th>
+                </tr>
+            </thead>
+            <tbody id="players">
+                {% for i in range(1, 9) %}
+                <tr class="player-row">
+                    <td>{{ i }}</td>
+                    <td><input type="text" name="name{{ i }}" placeholder="이름"></td>
+                    <td>
+                        <select name="gender{{ i }}">
+                            <option value="M" selected>M</option>
+                            <option value="F">F</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="level{{ i }}">
+                            <option value="A" selected>A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <button type="button" onclick="addPlayer()">참가자 추가</button>
-    <button type="submit">매칭 실행</button>
 </form>
 
 <script>
-    let playerCount = 1;
-    function addPlayer() {
+    let playerCount = 8;
+    function addPlayerField() {
         playerCount++;
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <input type="text" name="name${playerCount}" placeholder="이름">
-            <select name="gender${playerCount}">
-                <option value="M">남</option>
-                <option value="F">여</option>
-            </select>
-            <select name="level${playerCount}">
-                <option value="1">하</option>
-                <option value="2">중</option>
-                <option value="3">상</option>
-            </select>
+        const table = document.getElementById("players");
+        const row = document.createElement("tr");
+        row.className = "player-row";
+        row.innerHTML = `
+            <td>${playerCount}</td>
+            <td><input type="text" name="name${playerCount}" placeholder="이름"></td>
+            <td>
+                <select name="gender${playerCount}">
+                    <option value="M" selected>M</option>
+                    <option value="F">F</option>
+                </select>
+            </td>
+            <td>
+                <select name="level${playerCount}">
+                    <option value="A" selected>A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                </select>
+            </td>
         `;
-        document.getElementById("players").appendChild(div);
+        table.appendChild(row);
     }
 </script>
 
-{% if result %}
-<hr>
-{% include "record_detail_body.html" %}
+{% else %}
+{% include "record_detail_body.html" with match_result=result, game_counts=game_counts, folder_name=folder_name %}
 {% endif %}
-
 {% endblock %}
 
