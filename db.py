@@ -11,7 +11,7 @@ def get_unique_folder_name(base_name, records_dir="records"):
     return folder_name
 
 def save_record(match_result, game_counts):
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_str = datetime.now().strftime("%Y-%m-%d")  # ✅ yyyy-mm-dd 형식
     base_folder = get_unique_folder_name(date_str)
     folder_path = os.path.join("records", base_folder)
     os.makedirs(folder_path, exist_ok=True)
