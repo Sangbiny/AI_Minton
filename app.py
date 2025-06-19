@@ -70,5 +70,6 @@ def record_detail(folder_name):
     return render_template("record_detail.html", match_result=match_result, game_counts=game_counts, folder_name=folder_name)
 
 if __name__ == "__main__":
+    init_db()
     app.run(debug=True)
 
