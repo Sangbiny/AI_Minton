@@ -66,6 +66,31 @@
     }
 </style>
 
+<h1>참가자 입력</h1>
+<form method="POST">
+    <label for="total_game_count">총 경기 수:</label>
+    <input type="number" name="total_game_count" value="20" min="1" max="100">
+    <br><br>
+    {% for i in range(1, 21) %}
+        <label>{{ i }}번 이름:</label>
+        <input type="text" name="name{{ i }}" placeholder="이름">
+        <select name="gender{{ i }}">
+            <option value="">성별</option>
+            <option value="M">남</option>
+            <option value="F">여</option>
+        </select>
+        <select name="level{{ i }}">
+            <option value="">레벨</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+        </select>
+        <br>
+    {% endfor %}
+    <br>
+    <input type="submit" value="게임 매칭 실행">
+</form>
+
 {% if result %}
 <h1>참가자 명단</h1>
 <div style="margin-top: 20px;">
@@ -147,8 +172,5 @@
         </table>
     </div>
 </div>
-{% else %}
-<p>기록 결과가 없습니다.</p>
 {% endif %}
 {% endblock %}
-
