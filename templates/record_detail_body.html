@@ -1,0 +1,147 @@
+<style>
+    .result-container {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 40px;
+        margin-top: 30px;
+    }
+    .dogtag {
+        position: relative;
+        background-color: #f0f0f0;
+        border: 2px solid #333;
+        border-radius: 12px;
+        padding: 4px 6px;
+        font-weight: bold;
+        text-align: center;
+        min-height: 24px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+    .dogtag .game-number {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        background: #ffc107;
+        padding: 1px 5px;
+        border-radius: 8px;
+    }
+    table {
+        margin-top: 20px;
+        border-collapse: separate;
+        border-spacing: 10px;
+    }
+    table th {
+        padding: 8px;
+        background-color: #333;
+        color: white;
+        border-radius: 8px;
+        width: 100px;
+        text-align: center;
+    }
+    table td {
+        width: 100px;
+        vertical-align: middle;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .match-table td > .dogtag {
+        min-width: 100px;
+    }
+    .count-table td.count-table-cell {
+        width: 100px;
+    }
+    .count-table td.count-table-cell .dogtag {
+        width: 100%;
+        min-width: 100px;
+        max-width: 100px;
+        white-space: nowrap;
+    }
+</style>
+
+<h1>참가자 명단</h1>
+<div style="margin-top: 20px;">
+    <table>
+        <thead>
+            <tr>
+                <th>번호</th>
+                <th>이름</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name in game_counts.keys()|sort %}
+            <tr>
+                <td><div class="dogtag">{{ loop.index }}</div></td>
+                <td><div class="dogtag">{{ name }}</div></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="result-container">
+    <div style="flex: 1; min-width: 400px;">
+        <h2>매칭 결과</h2>
+        <table class="match-table">
+            <thead>
+                <tr>
+                    <th>경기</th>
+                    <th>선수1</th>
+                    <th>선수2</th>
+                    <th>선수3</th>
+                    <th>선수4</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set player_counts = {} %}
+                {% for line in match_result.split('\n') if line.strip() %}
+                {% set cols = line.split() %}
+                <tr>
+                    <td class="dogtag">제 {{ loop.index }} 경기</td>
+                    {% for i in range(4) %}
+                        {% if cols|length > i %}
+                        {% set name = cols[i] %}
+                        {% set player_counts = player_counts.update({name: (player_counts[name] + 1) if name in player_counts else 1}) or player_counts %}
+                        <td>
+                            <div class="dogtag">
+                                {{ name }}
+                                <span class="game-number">{{ player_counts[name] }}</span>
+                            </div>
+                        </td>
+                        {% else %}<td></td>{% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div style="min-width: 300px;">
+        <h2 style="margin-bottom: 10px;">멤버별 게임 수</h2>
+        <table class="count-table">
+            <thead>
+                <tr>
+                    <th>이름</th>
+                    <th>게임 수</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, count in game_counts.items() %}
+                <tr>
+                    <td class="count-table-cell">
+                        <div class="dogtag">{{ name }}</div>
+                    </td>
+                    <td class="count-table-cell">
+                        <div class="dogtag">{{ count }}</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
