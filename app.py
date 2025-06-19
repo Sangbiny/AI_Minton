@@ -31,7 +31,7 @@ def match():
 
         return render_template(
             "index.html",
-            result=match_result,
+            match_result=match_result,
             game_counts=game_counts,
             folder_name=timestamp,
         )
