@@ -8,7 +8,6 @@ from db import (
     delete_record_db,
 )
 from datetime import datetime
-import json
 
 app = Flask(__name__)
 
@@ -33,11 +32,12 @@ def match():
         if len(players) < 4:
             return "선수가 4명 이상 필요합니다."
 
-        # timestamp → yyyy-mm-dd 형식 (중복 방지용 인덱스 붙이기)
+        # 날짜 기반 timestamp 생성 + 중복 방지
         base_timestamp = datetime.now().strftime("%Y-%m-%d")
         timestamp = base_timestamp
         suffix = 2
-        while timestamp in load_all_records():
+        existing = load_all_records()
+        while timestamp in existing:
             timestamp = f"{base_timestamp} ({suffix})"
             suffix += 1
 
@@ -48,7 +48,7 @@ def match():
             "index.html",
             match_result=match_result,
             game_counts=game_counts,
-            folder_name=timestamp
+            folder_name=timestamp,
         )
 
     return render_template("index.html", match_result=None)
@@ -94,8 +94,8 @@ def run_match_algorithm(players, total_game_count):
     for i in range(total_game_count):
         match = []
         for j in range(4):
-            match.append(players[(idx + j) % num_players][0])  # 이름만 추출
-        idx += 1  # 슬라이딩 윈도우 방식
+            match.append(players[(idx + j) % num_players][0])
+        idx += 1
         result_lines.append(" ".join(match))
         for name in match:
             game_counts[name] = game_counts.get(name, 0) + 1

@@ -1,29 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Activity Records</h1>
-<table class="record-table">
-  <tr>
-    <th>Timestamp</th>
-    <th>Action</th>
-  </tr>
-  {% for folder in folders %}
-  <tr>
-    <td>
-      <a href="{{ url_for('record_detail', folder=folder) }}">{{ folder }}</a>
-    </td>
-    <td>
-      <form action="{{ url_for('rename_record') }}" method="post" style="display:inline;">
-        <input type="hidden" name="old_name" value="{{ folder }}">
-        <input type="text" name="new_name" placeholder="New name" required>
-        <button type="submit">Rename</button>
-      </form>
-      <form action="{{ url_for('delete_record') }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this record?');">
-        <input type="hidden" name="folder" value="{{ folder }}">
-        <button type="submit">Delete</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+<h1>운동 기록 보기</h1>
+
+<div style="margin-top: 20px;">
+    {% for folder in folders %}
+    <div style="background-color: #f9f9f9; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="flex-grow: 1;">
+            <a href="{{ url_for('record_detail', folder=folder) }}" style="font-size: 18px; text-decoration: underline;">{{ folder }}</a>
+        </div>
+        <form action="/rename_record" method="post" style="margin-left: 10px;">
+            <input type="hidden" name="old_name" value="{{ folder }}">
+            <input type="text" name="new_name" placeholder="새 이름" required>
+            <input type="password" name="password" placeholder="비밀번호" required>
+            <button type="submit">이름변경</button>
+        </form>
+        <form action="/delete_record" method="post" style="margin-left: 10px;">
+            <input type="hidden" name="folder" value="{{ folder }}">
+            <input type="password" name="password" placeholder="비밀번호" required>
+            <button type="submit" style="background-color: red; color: white;">삭제</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}
 
