@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import subprocess
 import os
 from db import save_record, load_all_records, load_record_detail
-
+ 
 app = Flask(__name__)
 
 @app.route("/")
