@@ -24,6 +24,7 @@ def match():
             if name:
                 players.append((name.strip(), gender, level))
             idx += 1
+    return render_template("index.html", result=None, game_counts=None, folder_name=None)
 
         if len(players) < 4:
             return "최소 4명의 참가자가 필요합니다.", 400
