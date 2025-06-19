@@ -17,7 +17,7 @@
         font-weight: bold;
         text-align: center;
         min-height: 40px;
-        display: inline-flex;
+        display: flex;
         align-items: center;
         justify-content: center;
         white-space: nowrap;
@@ -56,11 +56,10 @@
         width: auto;
     }
     .count-table td.count-table-cell {
-        width: auto;
-        min-width: 100px;
-        display: inline-flex;
-        justify-content: center;
+        width: 100px;
+        display: flex;
         align-items: center;
+        justify-content: center;
     }
 </style>
 
@@ -112,8 +111,8 @@
         <table class="count-table">
             <thead>
                 <tr>
-                    <th>이름</th>
-                    <th>게임 수</th>
+                    <th style="width: 100px;">이름</th>
+                    <th style="width: 100px;">게임 수</th>
                 </tr>
             </thead>
             <tbody>
