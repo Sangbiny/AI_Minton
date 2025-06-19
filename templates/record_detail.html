@@ -42,24 +42,26 @@
         background-color: #333;
         color: white;
         border-radius: 8px;
-        min-width: 100px;
+        width: 100px;
         text-align: center;
     }
     table td {
+        width: 100px;
         vertical-align: middle;
         text-align: center;
+        white-space: nowrap;
     }
     .match-table td > .dogtag {
         min-width: 100px;
     }
-    .count-table {
-        width: auto;
-    }
     .count-table td.count-table-cell {
         width: 100px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    }
+    .count-table td.count-table-cell .dogtag {
+        width: 100%;
+        min-width: 100px;
+        max-width: 100px;
+        white-space: nowrap;
     }
 </style>
 
@@ -111,15 +113,19 @@
         <table class="count-table">
             <thead>
                 <tr>
-                    <th style="width: 100px;">이름</th>
-                    <th style="width: 100px;">게임 수</th>
+                    <th>이름</th>
+                    <th>게임 수</th>
                 </tr>
             </thead>
             <tbody>
                 {% for name, count in game_counts.items() %}
                 <tr>
-                    <td class="dogtag count-table-cell">{{ name }}</td>
-                    <td class="dogtag count-table-cell">{{ count }}</td>
+                    <td class="count-table-cell">
+                        <div class="dogtag">{{ name }}</div>
+                    </td>
+                    <td class="count-table-cell">
+                        <div class="dogtag">{{ count }}</div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
