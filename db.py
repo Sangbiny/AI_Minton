@@ -6,12 +6,8 @@ DB_FILE = "match_records.db"
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("""
+    # records 테이블이 없을 경우 자동 생성
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS records (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT NOT NULL,
@@ -19,9 +15,7 @@ def init_db():
             game_counts TEXT NOT NULL
         );
     """)
-    conn.commit()
-    cur.close()
-    conn.close()
+    return conn
 
 def save_match_record(timestamp, match_result, game_counts):
     conn = get_db_connection()
