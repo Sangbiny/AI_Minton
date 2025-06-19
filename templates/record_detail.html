@@ -9,17 +9,29 @@
         margin-top: 30px;
     }
     .dogtag {
+        position: relative;
         background-color: #f0f0f0;
         border: 2px solid #333;
         border-radius: 12px;
-        padding: 6px;
+        padding: 12px 6px;
         font-weight: bold;
         text-align: center;
+        min-height: 40px;
+    }
+    .dogtag .game-number {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        background: #ffc107;
+        padding: 1px 5px;
+        border-radius: 8px;
     }
     table {
         margin-top: 20px;
         border-collapse: separate;
-        border-spacing: 10px; /* 셀 사이 여백 */
+        border-spacing: 10px;
     }
     table th {
         padding: 8px;
@@ -29,6 +41,7 @@
     }
     table td {
         min-width: 80px;
+        vertical-align: middle;
     }
 </style>
 
@@ -58,8 +71,13 @@
                 <tr>
                     <td class="dogtag">제 {{ loop.index }} 경기</td>
                     {% for i in range(4) %}
-                        <td class="dogtag">
-                            {{ cols[i] if cols|length > i else '' }}
+                        <td>
+                            {% if cols|length > i %}
+                            <div class="dogtag">
+                                {{ cols[i] }}
+                                <span class="game-number">{{ loop.index }}</span>
+                            </div>
+                            {% endif %}
                         </td>
                     {% endfor %}
                 </tr>
