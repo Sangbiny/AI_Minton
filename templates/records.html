@@ -1,17 +1,29 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block content %}
-  <h2 class="text-2xl font-bold mb-4">Activity Records</h2>
-  <ul class="list-disc pl-5">
-    {% for folder in folders %}
-      <li>
-        <a href="{{ url_for('record_detail', folder=folder) }}" class="text-blue-500 hover:underline">
-          {{ folder }}
-        </a>
-      </li>
-    {% else %}
-      <li>No records yet.</li>
-    {% endfor %}
-  </ul>
+<h1>Activity Records</h1>
+<table class="record-table">
+  <tr>
+    <th>Timestamp</th>
+    <th>Action</th>
+  </tr>
+  {% for folder in folders %}
+  <tr>
+    <td>
+      <a href="{{ url_for('record_detail', folder=folder) }}">{{ folder }}</a>
+    </td>
+    <td>
+      <form action="{{ url_for('rename_record') }}" method="post" style="display:inline;">
+        <input type="hidden" name="old_name" value="{{ folder }}">
+        <input type="text" name="new_name" placeholder="New name" required>
+        <button type="submit">Rename</button>
+      </form>
+      <form action="{{ url_for('delete_record') }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this record?');">
+        <input type="hidden" name="folder" value="{{ folder }}">
+        <button type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
 {% endblock %}
 

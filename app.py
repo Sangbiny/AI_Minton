@@ -1,7 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for
-from db import init_db, save_match_record, load_all_records, load_record
+from db import (
+    init_db,
+    save_match_record,
+    load_all_records,
+    load_record,
+    rename_record_db,
+    delete_record_db,
+)
 from datetime import datetime
-import os
 import json
 
 app = Flask(__name__)
@@ -61,6 +67,20 @@ def record_detail(folder):
         game_counts=game_counts,
         folder_name=folder,
     )
+
+@app.route("/rename_record", methods=["POST"])
+def rename_record():
+    old_name = request.form["old_name"]
+    new_name = request.form["new_name"]
+    if new_name and new_name not in load_all_records():
+        rename_record_db(old_name, new_name)
+    return redirect(url_for("records"))
+
+@app.route("/delete_record", methods=["POST"])
+def delete_record():
+    folder = request.form["folder"]
+    delete_record_db(folder)
+    return redirect(url_for("records"))
 
 def run_match_algorithm(players, total_game_count):
     result_lines = []
