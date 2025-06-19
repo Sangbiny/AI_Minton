@@ -1,106 +1,73 @@
+# app.py
 from flask import Flask, render_template, request, redirect, url_for
-import subprocess
+from datetime import datetime
 import os
-from db import save_record, load_all_records, load_record_detail
- 
+from db import init_db, save_match_record, load_all_records, load_record
+import subprocess
+
 app = Flask(__name__)
+init_db()
 
 @app.route("/")
-def start():
-    return render_template("start.html")
+def index():
+    return render_template("index.html", result=None)
 
-@app.route("/match", methods=["GET", "POST"])
+@app.route("/match", methods=["POST"])
 def match():
-    if request.method == "POST":
-        os.makedirs("output", exist_ok=True)
+    total_game_count = int(request.form.get("total_game_count", 20))
+    players = []
 
-        total_game_count = request.form.get("total_game_count", "20")
-        try:
-            total_game_count = int(total_game_count)
-        except ValueError:
-            total_game_count = 20
+    i = 1
+    while True:
+        name = request.form.get(f"name{i}")
+        gender = request.form.get(f"gender{i}")
+        level = request.form.get(f"level{i}")
+        if not name:
+            break
+        players.append((name.strip(), gender.strip(), level.strip()))
+        i += 1
 
-        with open("input.txt", "w", encoding="utf-8") as f:
-            f.write(f"{total_game_count}\n")
-            for i in range(1, 101):
-                name = request.form.get(f"name{i}", "").strip()
-                gender = request.form.get(f"gender{i}", "").strip()
-                level = request.form.get(f"level{i}", "").strip()
-                if name:
-                    f.write(f"{name} {gender} {level}\n")
+    input_lines = [f"{len(players)} {total_game_count}"]
+    for p in players:
+        input_lines.append(" ".join(p))
 
-        try:
-            subprocess.run(["./match"], check=True)
-        except subprocess.CalledProcessError:
-            return "매칭 실행 중 오류 발생"
+    input_text = "\n".join(input_lines)
 
-        try:
-            with open("result_of_match.txt", "r", encoding="utf-8") as f:
-                result = f.read()
-        except FileNotFoundError:
-            return "결과 파일이 존재하지 않습니다."
+    with open("input.txt", "w", encoding="utf-8") as f:
+        f.write(input_text)
 
-        game_counts = {}
-        for line in result.splitlines():
-            for name in line.strip().split():
-                game_counts[name] = game_counts.get(name, 0) + 1
+    subprocess.run(["./match"], check=True)
 
-        save_record(result, game_counts)
+    with open("result_of_match.txt", "r", encoding="utf-8") as f:
+        result = f.read()
 
-        return render_template(
-            "index.html",
-            result=result,
-            match_result=result,  # ✅ 이거 추가!
-            game_counts=game_counts
-        )
+    with open("count.txt", "r", encoding="utf-8") as f:
+        lines = f.read().strip().split("\n")
+        game_counts = {line.split()[0]: int(line.split()[1]) for line in lines if line.strip()}
 
-    return render_template("index.html")
+    # 저장 이름 생성: yyyy-mm-dd 혹은 yyyy-mm-dd (2) 등 중복 방지
+    base_date = datetime.now().strftime("%Y-%m-%d")
+    existing_names = [record["folder_name"] for record in load_all_records() if record["folder_name"].startswith(base_date)]
+    if base_date not in existing_names:
+        folder_name = base_date
+    else:
+        i = 2
+        while f"{base_date} ({i})" in existing_names:
+            i += 1
+        folder_name = f"{base_date} ({i})"
+
+    save_match_record(folder_name, result, game_counts)
+    return render_template("index.html", result=result, game_counts=game_counts, folder_name=folder_name)
 
 @app.route("/records")
 def records():
-    folders = load_all_records()
-    return render_template("records.html", record_folders=folders)
+    all_records = load_all_records()
+    return render_template("records.html", records=all_records)
 
 @app.route("/records/<folder_name>")
 def record_detail(folder_name):
-    result, game_counts, nth_game_counts = load_record_detail(folder_name)
-    if result is None:
-        return "기록 파일이 존재하지 않거나 손상되었습니다."
-    return render_template(
-        "record_detail.html",
-        folder_name=folder_name,
-        match_result=result,
-        game_counts=game_counts,
-        nth_game_counts=nth_game_counts,
-    )
-
-@app.route("/delete_record", methods=["POST"])
-def delete_record():
-    folder = request.form.get("folder")
-    password = request.form.get("password")
-
-    if password == "mju":
-        try:
-            import shutil
-            shutil.rmtree(f"records/{folder}")
-        except Exception:
-            return "삭제 중 오류 발생"
-        return redirect(url_for("records"))
-    else:
-        return "비밀번호 오류"
-
-@app.route("/rename_record", methods=["POST"])
-def rename_record_route():
-    old_name = request.form.get("old_name")
-    new_name = request.form.get("new_name")
-    password = request.form.get("password")
-
-    if password == "mju":
-        from db import rename_record
-        if rename_record(old_name, new_name):
-            return redirect(url_for("records"))
-        return "이름 변경 실패: 이미 존재하거나 폴더 없음"
-    return "비밀번호가 틀렸습니다."
+    match_result, game_counts = load_record(folder_name)
+    return render_template("record_detail.html", match_result=match_result, game_counts=game_counts, folder_name=folder_name)
 
 if __name__ == "__main__":
     app.run(debug=True)
