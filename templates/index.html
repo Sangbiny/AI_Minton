@@ -67,7 +67,7 @@
 </style>
 
 <h1>참가자 입력</h1>
-<form method="POST">
+<form action="/match" method="POST">
     <label for="total_game_count">총 경기 수:</label>
     <input type="number" name="total_game_count" value="20" min="1" max="100">
     <br><br>
@@ -174,3 +174,4 @@
 </div>
 {% endif %}
 {% endblock %}
+
