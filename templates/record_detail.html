@@ -20,6 +20,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        white-space: nowrap;
     }
     .dogtag .game-number {
         position: absolute;
@@ -51,13 +52,8 @@
     .match-table td > .dogtag {
         min-width: 100px;
     }
-    .count-table td.dogtag {
-        min-width: auto;
-        width: auto;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
+    .count-table td.count-table-cell {
+        width: 120px;
     }
 </style>
 
@@ -104,7 +100,7 @@
             </tbody>
         </table>
     </div>
-    <div style="min-width: 600px;">
+    <div style="min-width: 300px;">
         <h2 style="margin-bottom: 10px;">멤버별 게임 수</h2>
         <table class="count-table">
             <thead>
