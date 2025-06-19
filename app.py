@@ -25,7 +25,9 @@ def match():
                 players.append((name.strip(), gender, level))
             idx += 1
 
-        # 저장 파일 이름을 yyyy-mm-dd 형식으로 변경
+        if len(players) < 4:
+            return "최소 4명의 참가자가 필요합니다.", 400
+
         timestamp = datetime.now().strftime("%Y-%m-%d")
         match_result, game_counts = run_match_algorithm(players, total_game_count)
         save_match_record(timestamp, match_result, game_counts)
@@ -55,8 +57,6 @@ def record_detail(folder):
     )
 
 def run_match_algorithm(players, total_game_count):
-    # 간단한 매칭 알고리즘 placeholder
-    # 실제론 C++ 실행 결과를 받아오는 부분이어야 함
     result_lines = []
     game_counts = {}
     for i in range(total_game_count):
@@ -69,3 +69,4 @@ def run_match_algorithm(players, total_game_count):
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)
+

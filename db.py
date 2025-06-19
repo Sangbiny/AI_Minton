@@ -3,7 +3,7 @@ import sqlite3
 import json
 import os
 
-DB_FILE = "match_records.db"
+DB_FILE = "/tmp/match_records.db"  # Render 무료 플랜에 맞춰 변경
 
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)
