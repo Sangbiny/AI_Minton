@@ -6,16 +6,22 @@ DB_FILE = "match_records.db"
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
-    # records 테이블이 없을 경우 자동 생성
-    conn.execute("""
+    return conn
+
+def init_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS records (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT NOT NULL,
+            timestamp TEXT NOT NULL UNIQUE,
             match_result TEXT NOT NULL,
             game_counts TEXT NOT NULL
         );
     """)
-    return conn
+    conn.commit()
+    cur.close()
+    conn.close()
 
 def save_match_record(timestamp, match_result, game_counts):
     conn = get_db_connection()
@@ -47,18 +53,19 @@ def load_record(timestamp):
     if row:
         return row["match_result"], json.loads(row["game_counts"])
     return None, None
-        
-def init_db():
+
+def rename_record_db(old_name, new_name):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT NOT NULL,
-            match_result TEXT NOT NULL,
-            game_counts TEXT NOT NULL
-        );
-    """)
+    cur.execute("UPDATE records SET timestamp = ? WHERE timestamp = ?", (new_name, old_name))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def delete_record_db(timestamp):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM records WHERE timestamp = ?", (timestamp,))
     conn.commit()
     cur.close()
     conn.close()
