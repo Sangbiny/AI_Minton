@@ -9,32 +9,26 @@
         margin-top: 30px;
     }
     .dogtag {
-        display: inline-block;
-        position: relative;
-        padding: 6px 10px;
-        border: 2px solid #333;
-        border-radius: 10px;
         background-color: #f0f0f0;
-        margin: 2px;
-    }
-    .game-count {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        background-color: #ffc107;
-        border-radius: 50%;
-        padding: 3px 6px;
-        font-size: 11px;
+        border: 2px solid #333;
+        border-radius: 12px;
+        padding: 6px;
         font-weight: bold;
+        text-align: center;
     }
     table {
         margin-top: 20px;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 10px; /* 셀 사이 여백 */
     }
-    table, th, td {
-        border: 1px solid black;
-        padding: 5px;
-        text-align: center;
+    table th {
+        padding: 8px;
+        background-color: #333;
+        color: white;
+        border-radius: 8px;
+    }
+    table td {
+        min-width: 80px;
     }
 </style>
 
@@ -51,25 +45,21 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 120px;">경기</th>
-                    <th style="width: 80px;">선수1</th>
-                    <th style="width: 80px;">선수2</th>
-                    <th style="width: 80px;">선수3</th>
-                    <th style="width: 80px;">선수4</th>
+                    <th>경기</th>
+                    <th>선수1</th>
+                    <th>선수2</th>
+                    <th>선수3</th>
+                    <th>선수4</th>
                 </tr>
             </thead>
             <tbody>
                 {% for line in match_result.split('\n') if line.strip() %}
                 {% set cols = line.split() %}
                 <tr>
-                    <td>제 {{ loop.index }} 경기</td>
+                    <td class="dogtag">제 {{ loop.index }} 경기</td>
                     {% for i in range(4) %}
-                        <td>
-                            {% if cols|length > i %}
-                                <span class="dogtag">{{ cols[i] }}</span>
-                                    {{ cols[i] }}
-                                </span>
-                            {% endif %}
+                        <td class="dogtag">
+                            {{ cols[i] if cols|length > i else '' }}
                         </td>
                     {% endfor %}
                 </tr>
@@ -89,8 +79,8 @@
             <tbody>
                 {% for name, count in game_counts.items() %}
                 <tr>
-                    <td>{{ name }}</td>
-                    <td>{{ count }}</td>
+                    <td class="dogtag">{{ name }}</td>
+                    <td class="dogtag">{{ count }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
