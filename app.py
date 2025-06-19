@@ -84,6 +84,19 @@ def delete_record():
     else:
         return "\u5bc6\u7801\u9519\u8bef\u3002"
 
+@app.route("/rename_record", methods=["POST"])
+def rename_record_route():
+    old_name = request.form.get("old_name")
+    new_name = request.form.get("new_name")
+    password = request.form.get("password")
+
+    if password == "mju":
+        from db import rename_record
+        if rename_record(old_name, new_name):
+            return redirect(url_for("records"))
+        return "이름 변경 실패: 이미 존재하거나 폴더 없음"
+    return "비밀번호가 틀렸습니다."
+
 if __name__ == "__main__":
     app.run(debug=True)
 

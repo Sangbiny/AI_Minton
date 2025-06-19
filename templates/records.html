@@ -23,7 +23,11 @@
         font-weight: bold;
     }
     .record-entry form {
-        margin: 0;
+        margin: 0 5px;
+    }
+    .record-entry input {
+        padding: 4px 8px;
+        margin-right: 6px;
     }
     .record-entry button {
         padding: 6px 12px;
@@ -33,6 +37,9 @@
         border: none;
         border-radius: 5px;
         cursor: pointer;
+    }
+    .rename-form button {
+        background-color: #007bff;
     }
     .empty-message {
         margin-top: 40px;
@@ -48,6 +55,12 @@
         {% for folder in record_folders %}
         <div class="record-entry">
             <a href="/records/{{ folder }}">{{ folder }}</a>
+            <form action="/rename_record" method="POST" class="rename-form">
+                <input type="hidden" name="old_name" value="{{ folder }}">
+                <input type="text" name="new_name" placeholder="새 이름" required>
+                <input type="password" name="password" placeholder="비밀번호" required>
+                <button type="submit">이름변경</button>
+            </form>
             <form action="/delete_record" method="POST">
                 <input type="hidden" name="folder" value="{{ folder }}">
                 <input type="password" name="password" placeholder="비밀번호" required>
