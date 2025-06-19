@@ -13,31 +13,39 @@ def home():
 @app.route("/match", methods=["GET", "POST"])
 def match():
     if request.method == "POST":
-        total_game_count = int(request.form["total_game_count"])
+        total_game_count = int(request.form.get("total_game_count", 20))
         players = []
         idx = 1
         while f"name{idx}" in request.form:
-            name = request.form.get(f"name{idx}")
-            gender = request.form.get(f"gender{idx}")
-            level = request.form.get(f"level{idx}")
+            name = request.form.get(f"name{idx}", "").strip()
+            gender = request.form.get(f"gender{idx}", "")
+            level = request.form.get(f"level{idx}", "")
             if name:
-                players.append((name.strip(), gender, level))
+                players.append((name, gender, level))
             idx += 1
 
-        # 저장 파일 이름을 yyyy-mm-dd 형식으로 변경
-        timestamp = datetime.now().strftime("%Y-%m-%d")
+        if len(players) < 4:
+            return "선수가 4명 이상 필요합니다."
+
+        # timestamp → yyyy-mm-dd 형식 (중복 방지용 인덱스 붙이기)
+        base_timestamp = datetime.now().strftime("%Y-%m-%d")
+        timestamp = base_timestamp
+        suffix = 2
+        while timestamp in load_all_records():
+            timestamp = f"{base_timestamp} ({suffix})"
+            suffix += 1
+
         match_result, game_counts = run_match_algorithm(players, total_game_count)
         save_match_record(timestamp, match_result, game_counts)
 
         return render_template(
             "index.html",
-            match_result=match_result,
+            result=match_result,
             game_counts=game_counts,
-            folder_name=timestamp,
+            folder_name=timestamp
         )
 
-    # 🛠 GET 요청 처리 보완
-    return render_template("index.html", result=None, game_counts={})
+    return render_template("index.html", result=None)
 
 @app.route("/records")
 def records():
@@ -55,20 +63,26 @@ def record_detail(folder):
     )
 
 def run_match_algorithm(players, total_game_count):
-    # 간단한 매칭 알고리즘 placeholder
     result_lines = []
     game_counts = {}
+
+    num_players = len(players)
+    if num_players < 4:
+        return "", {}
+
+    idx = 0
     for i in range(total_game_count):
-        match = [p[0] for p in players[i % len(players):i % len(players) + 4]]
+        match = []
+        for j in range(4):
+            match.append(players[(idx + j) % num_players][0])
+        idx += 4
         result_lines.append(" ".join(match))
         for name in match:
             game_counts[name] = game_counts.get(name, 0) + 1
+
     return "\n".join(result_lines), game_counts
 
-# 🛠 Render 환경에서도 DB 초기화가 실행되도록 보장
-with app.app_context():
-    init_db()
-
 if __name__ == "__main__":
+    init_db()
     app.run(debug=True)
 
