@@ -72,6 +72,27 @@
 
 <h1>참가자 명단</h1>
 {% if match_result %}
+<div style="margin-top: 20px;">
+    <table>
+        <thead>
+            <tr>
+                <th>번호</th>
+                <th>이름</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set index = 1 %}
+            {% for name in game_counts.keys()|sort %}
+            <tr>
+                <td>{{ index }}</td>
+                <td>{{ name }}</td>
+            </tr>
+            {% set index = index + 1 %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 <div class="result-container">
     <div style="flex: 1; min-width: 400px;">
         <h2>매칭 결과</h2>
