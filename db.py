@@ -47,4 +47,19 @@ def load_record(timestamp):
     if row:
         return row["match_result"], json.loads(row["game_counts"])
     return None, None
+        
+def init_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            match_result TEXT NOT NULL,
+            game_counts TEXT NOT NULL
+        );
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
 

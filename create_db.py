@@ -1,7 +1,7 @@
 # create_db.py
-from db import init_db
+from db import get_db_connection
 
-if __name__ == "__main__":
-    init_db()
-    print("✅ DB 테이블 생성 완료")
+conn = get_db_connection()
+conn.close()
+print("✅ DB 연결 및 테이블 생성 완료")
 
