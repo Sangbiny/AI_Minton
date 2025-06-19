@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, render_template, request, redirect, url_for
 from db import init_db, save_match_record, load_all_records, load_record
 from datetime import datetime
@@ -24,11 +23,8 @@ def match():
             if name:
                 players.append((name.strip(), gender, level))
             idx += 1
-    return render_template("index.html", result=None, game_counts=None, folder_name=None)
 
-        if len(players) < 4:
-            return "최소 4명의 참가자가 필요합니다.", 400
-
+        # 저장 파일 이름을 yyyy-mm-dd 형식으로 변경
         timestamp = datetime.now().strftime("%Y-%m-%d")
         match_result, game_counts = run_match_algorithm(players, total_game_count)
         save_match_record(timestamp, match_result, game_counts)
@@ -40,14 +36,8 @@ def match():
             folder_name=timestamp,
         )
 
-#    return render_template("index.html", result=None)
-        return render_template(
-            "index.html",
-            result=match_result,
-            game_counts=game_counts,
-            folder_name=timestamp,
-        )
-        
+    # 🛠 GET 요청 처리 보완
+    return render_template("index.html", result=None, game_counts={})
 
 @app.route("/records")
 def records():
@@ -65,6 +55,7 @@ def record_detail(folder):
     )
 
 def run_match_algorithm(players, total_game_count):
+    # 간단한 매칭 알고리즘 placeholder
     result_lines = []
     game_counts = {}
     for i in range(total_game_count):
@@ -74,8 +65,10 @@ def run_match_algorithm(players, total_game_count):
             game_counts[name] = game_counts.get(name, 0) + 1
     return "\n".join(result_lines), game_counts
 
-if __name__ == "__main__":
+# 🛠 Render 환경에서도 DB 초기화가 실행되도록 보장
+with app.app_context():
     init_db()
+
+if __name__ == "__main__":
     app.run(debug=True)
 
-init_db()    
