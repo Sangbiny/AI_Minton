@@ -1,22 +1,22 @@
-import sqlite3
+# db.py
+import os
+import psycopg2
 import json
 
-DB_FILE = "match_records.db"
+DB_URL = os.environ.get("DATABASE_URL")
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return psycopg2.connect(DB_URL)
 
 def init_db():
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT NOT NULL UNIQUE,
+            id SERIAL PRIMARY KEY,
+            timestamp TEXT UNIQUE NOT NULL,
             match_result TEXT NOT NULL,
-            game_counts TEXT NOT NULL
+            game_counts JSON NOT NULL
         );
     """)
     conn.commit()
@@ -27,7 +27,7 @@ def save_match_record(timestamp, match_result, game_counts):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO records (timestamp, match_result, game_counts) VALUES (?, ?, ?)",
+        "INSERT INTO records (timestamp, match_result, game_counts) VALUES (%s, %s, %s)",
         (timestamp, match_result, json.dumps(game_counts))
     )
     conn.commit()
@@ -41,23 +41,23 @@ def load_all_records():
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return [row["timestamp"] for row in rows]
+    return [row[0] for row in rows]
 
 def load_record(timestamp):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT match_result, game_counts FROM records WHERE timestamp = ?", (timestamp,))
+    cur.execute("SELECT match_result, game_counts FROM records WHERE timestamp = %s", (timestamp,))
     row = cur.fetchone()
     cur.close()
     conn.close()
     if row:
-        return row["match_result"], json.loads(row["game_counts"])
+        return row[0], json.loads(row[1])
     return None, None
 
 def rename_record_db(old_name, new_name):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE records SET timestamp = ? WHERE timestamp = ?", (new_name, old_name))
+    cur.execute("UPDATE records SET timestamp = %s WHERE timestamp = %s", (new_name, old_name))
     conn.commit()
     cur.close()
     conn.close()
@@ -65,7 +65,7 @@ def rename_record_db(old_name, new_name):
 def delete_record_db(timestamp):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM records WHERE timestamp = ?", (timestamp,))
+    cur.execute("DELETE FROM records WHERE timestamp = %s", (timestamp,))
     conn.commit()
     cur.close()
     conn.close()
