@@ -39,7 +39,14 @@ def match():
             folder_name=timestamp,
         )
 
-    return render_template("index.html", result=None)
+#    return render_template("index.html", result=None)
+        return render_template(
+            "index.html",
+            result=match_result,
+            game_counts=game_counts,
+            folder_name=timestamp,
+        )
+        
 
 @app.route("/records")
 def records():

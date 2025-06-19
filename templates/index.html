@@ -114,8 +114,8 @@
     }
 </script>
 
-{% else %}
-{% include "record_detail_body.html" with match_result=result, game_counts=game_counts, folder_name=folder_name %}
+{% elif result and game_counts and folder_name %}
+{% include "record_detail_body.html" %}
 {% endif %}
 {% endblock %}
 
