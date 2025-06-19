@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-{% if result %}
+{% if match_result is defined and match_result %}
     {% include "record_detail_body.html" %}
 {% else %}
 <style>
