@@ -13,10 +13,10 @@
         background-color: #f0f0f0;
         border: 2px solid #333;
         border-radius: 12px;
-        padding: 12px 6px;
+        padding: 8px 6px;
         font-weight: bold;
         text-align: center;
-        min-height: 40px;
+        min-height: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -84,7 +84,7 @@
             {% for name in game_counts.keys()|sort %}
             <tr>
                 <td>{{ loop.index }}</td>
-                <td>{{ name }}</td>
+                <td><div class="dogtag">{{ name }}</div></td>
             </tr>
             {% endfor %}
         </tbody>
