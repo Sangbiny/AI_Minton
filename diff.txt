@@ -1,0 +1,13 @@
+19a20,22
+>         display: flex;
+>         align-items: center;
+>         justify-content: center;
+40a44,45
+>         min-width: 100px;
+>         text-align: center;
+43c48
+<         min-width: 80px;
+---
+>         min-width: 100px;
+44a50
+>         text-align: center;
