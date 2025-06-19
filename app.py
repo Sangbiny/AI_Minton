@@ -22,7 +22,7 @@ def match():
 
         with open("input.txt", "w", encoding="utf-8") as f:
             f.write(f"{total_game_count}\n")
-            for i in range(1, 21):
+            for i in range(1, 101):
                 name = request.form.get(f"name{i}", "").strip()
                 gender = request.form.get(f"gender{i}", "").strip()
                 level = request.form.get(f"level{i}", "").strip()
@@ -32,7 +32,7 @@ def match():
         try:
             subprocess.run(["./match"], check=True)
         except subprocess.CalledProcessError:
-            return "매칭 실행 중 오류가 발생했습니다."
+            return "매칭 실행 중 오류 발생"
 
         try:
             with open("result_of_match.txt", "r", encoding="utf-8") as f:
@@ -45,8 +45,14 @@ def match():
             for name in line.strip().split():
                 game_counts[name] = game_counts.get(name, 0) + 1
 
-        folder_name = save_record(result, game_counts)  # 폴더 생성 책임을 db.py에 위임
-        return render_template("index.html", result=result, game_counts=game_counts)
+        save_record(result, game_counts)
+
+        return render_template(
+            "index.html",
+            result=result,
+            match_result=result,  # ✅ 이거 추가!
+            game_counts=game_counts
+        )
 
     return render_template("index.html")
 
@@ -78,10 +84,10 @@ def delete_record():
             import shutil
             shutil.rmtree(f"records/{folder}")
         except Exception:
-            return "삭제 중 오류가 발생했습니다."
+            return "삭제 중 오류 발생"
         return redirect(url_for("records"))
     else:
-        return "비밀번호 오류입니다."
+        return "비밀번호 오류"
 
 @app.route("/rename_record", methods=["POST"])
 def rename_record_route():
