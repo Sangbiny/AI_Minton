@@ -1,54 +1,6 @@
 {% extends "base.html" %}
-
 {% block content %}
 <style>
-    button {
-        padding: 5px 10px;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-        background-color: #f0f0f0;
-        cursor: pointer;
-    }
-    .input-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 5px;
-    }
-    .input-row label {
-        width: 60px;
-    }
-    .input-row input[type="text"] {
-        width: 100px;
-        margin-right: 20px;
-    }
-    .input-row select {
-        width: 60px;
-        margin-right: 20px;
-    }
-    .header-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 5px;
-        font-weight: bold;
-    }
-    .header-row span {
-        display: inline-block;
-        width: 60px;
-    }
-    .header-row label {
-        width: 100px;
-        margin-right: 20px;
-        text-align: left;
-    }
-    table {
-        margin-top: 20px;
-        border-collapse: collapse;
-    }
-    table, th, td {
-        border: 1px solid black;
-        padding: 5px;
-        text-align: center;
-    }
     .result-container {
         display: flex;
         flex-wrap: nowrap;
@@ -56,168 +8,147 @@
         gap: 40px;
         margin-top: 30px;
     }
+    .dogtag {
+        position: relative;
+        background-color: #f0f0f0;
+        border: 2px solid #333;
+        border-radius: 12px;
+        padding: 4px 6px;
+        font-weight: bold;
+        text-align: center;
+        min-height: 24px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+    .dogtag .game-number {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        background: #ffc107;
+        padding: 1px 5px;
+        border-radius: 8px;
+    }
+    table {
+        margin-top: 20px;
+        border-collapse: separate;
+        border-spacing: 10px;
+    }
+    table th {
+        padding: 8px;
+        background-color: #333;
+        color: white;
+        border-radius: 8px;
+        width: 100px;
+        text-align: center;
+    }
+    table td {
+        width: 100px;
+        vertical-align: middle;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .match-table td > .dogtag {
+        min-width: 100px;
+    }
+    .count-table td.count-table-cell {
+        width: 100px;
+    }
+    .count-table td.count-table-cell .dogtag {
+        width: 100%;
+        min-width: 100px;
+        max-width: 100px;
+        white-space: nowrap;
+    }
 </style>
 
-<script>
-    let playerCount = 8;
-
-    function addPlayerField() {
-        playerCount++;
-        const container = document.getElementById("players");
-
-        const div = document.createElement("div");
-        div.className = "input-row";
-        div.innerHTML = `
-            <label>선수 ${playerCount}</label>
-            <input type="text" name="name${playerCount}" placeholder="이름">
-            <select name="gender${playerCount}">
-                <option value="M" selected>M</option>
-                <option value="F">F</option>
-            </select>
-            <select name="level${playerCount}">
-                <option value="A" selected>A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
-            </select>
-        `;
-        container.appendChild(div);
-    }
-</script>
-
-<div style="display: flex; justify-content: space-between; align-items: center;">
-    <h1>{% if not result %}게임 참가자 입력{% else %}참가자 명단{% endif %}</h1>
-    {% if result %}
-    <form action="/" method="get">
-        <button type="submit">초기화</button>
-    </form>
-    {% endif %}
-</div>
-
-{% if not result %}
-<form action="/match" method="post">
-    <div style="margin-bottom: 10px;">
-        <label for="total_game_count"><strong>총 게임 수:</strong></label>
-        <input type="number" name="total_game_count" id="total_game_count" min="1" value="20">
-    </div>
-
-    <div class="header-row">
-        <span></span>
-        <label>이름</label>
-        <label style="width: 60px;">성별</label>
-        <label style="width: 60px;">급수</label>
-    </div>
-    <div id="players">
-        {% for i in range(1, 9) %}
-        <div class="input-row">
-            <label>선수 {{ i }}</label>
-            <input type="text" name="name{{ i }}" placeholder="이름">
-            <select name="gender{{ i }}">
-                <option value="M" selected>M</option>
-                <option value="F">F</option>
-            </select>
-            <select name="level{{ i }}">
-                <option value="A" selected>A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
-            </select>
-        </div>
-        {% endfor %}
-    </div>
-    <button type="button" onclick="addPlayerField()">선수 추가</button>
-    <br><br>
-    <button type="submit">매칭 실행</button>
-</form>
-{% else %}
-
-<!-- 참가자 명단 -->
-{% set chunk_size = 10 %}
-{% for start in range(0, players|length, chunk_size) %}
-<div style="display: inline-block; vertical-align: top; margin-right: 30px;">
+{% if result %}
+<h1>참가자 명단</h1>
+<div style="margin-top: 20px;">
     <table>
         <thead>
             <tr>
                 <th>번호</th>
                 <th>이름</th>
-                <th>성별</th>
-                <th>급수</th>
             </tr>
         </thead>
         <tbody>
-            {% for i in range(start, [start + chunk_size, players|length] | min) %}
+            {% for name in game_counts.keys()|sort %}
             <tr>
-                <td>선수 {{ i + 1 }}</td>
-                <td>{{ players[i]["name"] }}</td>
-                <td>{{ players[i]["gender"] }}</td>
-                <td>{{ players[i]["level"] }}</td>
+                <td><div class="dogtag">{{ loop.index }}</div></td>
+                <td><div class="dogtag">{{ name }}</div></td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-{% endfor %}
 
-<!-- 결과 출력 -->
 <div class="result-container">
     <div style="flex: 1; min-width: 400px;">
         <h2>매칭 결과</h2>
-        <table>
+        <table class="match-table">
             <thead>
                 <tr>
-                    <th style="width: 120px;">경기</th>
-                    <th style="width: 80px;">선수1</th>
-                    <th style="width: 80px;">선수2</th>
-                    <th style="width: 80px;">선수3</th>
-                    <th style="width: 80px;">선수4</th>
+                    <th>경기</th>
+                    <th>선수1</th>
+                    <th>선수2</th>
+                    <th>선수3</th>
+                    <th>선수4</th>
                 </tr>
             </thead>
             <tbody>
+                {% set player_counts = {} %}
                 {% for line in result.split('\n') if line.strip() %}
                 {% set cols = line.split() %}
                 <tr>
-                    <td>제 {{ loop.index }} 경기</td>
-                    <td>{{ cols[0] if cols|length > 0 else '' }}</td>
-                    <td>{{ cols[1] if cols|length > 1 else '' }}</td>
-                    <td>{{ cols[2] if cols|length > 2 else '' }}</td>
-                    <td>{{ cols[3] if cols|length > 3 else '' }}</td>
+                    <td class="dogtag">제 {{ loop.index }} 경기</td>
+                    {% for i in range(4) %}
+                        {% if cols|length > i %}
+                        {% set name = cols[i] %}
+                        {% set player_counts = player_counts.update({name: (player_counts[name] + 1) if name in player_counts else 1}) or player_counts %}
+                        <td>
+                            <div class="dogtag">
+                                {{ name }}
+                                <span class="game-number">{{ player_counts[name] }}</span>
+                            </div>
+                        </td>
+                        {% else %}<td></td>{% endif %}
+                    {% endfor %}
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <div style="min-width: 600px;">
+    <div style="min-width: 300px;">
         <h2 style="margin-bottom: 10px;">멤버별 게임 수</h2>
-        {% if game_counts %}
-        <div style="display: flex; gap: 40px; flex-wrap: nowrap; overflow-x: auto;">
-            {% set names = game_counts.keys() | list %}
-            {% set chunk_size = 10 %}
-            {% for start in range(0, names | length, chunk_size) %}
-            <div style="display: inline-block;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>이름</th>
-                            <th>게임 수</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for i in range(start, [start + chunk_size, names | length] | min) %}
-                        <tr>
-                            <td>{{ names[i] }}</td>
-                            <td>{{ game_counts[names[i]] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+        <table class="count-table">
+            <thead>
+                <tr>
+                    <th>이름</th>
+                    <th>게임 수</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, count in game_counts.items() %}
+                <tr>
+                    <td class="count-table-cell">
+                        <div class="dogtag">{{ name }}</div>
+                    </td>
+                    <td class="count-table-cell">
+                        <div class="dogtag">{{ count }}</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
+{% else %}
+<p>기록 결과가 없습니다.</p>
 {% endif %}
 {% endblock %}
 
