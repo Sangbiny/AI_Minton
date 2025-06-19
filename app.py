@@ -40,12 +40,12 @@ def match():
 
         return render_template(
             "index.html",
-            result=match_result,
+            match_result=match_result,
             game_counts=game_counts,
             folder_name=timestamp
         )
 
-    return render_template("index.html", result=None)
+    return render_template("index.html", match_result=None)
 
 @app.route("/records")
 def records():
@@ -74,8 +74,8 @@ def run_match_algorithm(players, total_game_count):
     for i in range(total_game_count):
         match = []
         for j in range(4):
-            match.append(players[(idx + j) % num_players][0])
-        idx += 4
+            match.append(players[(idx + j) % num_players][0])  # 이름만 추출
+        idx += 1  # 슬라이딩 윈도우 방식
         result_lines.append(" ".join(match))
         for name in match:
             game_counts[name] = game_counts.get(name, 0) + 1
