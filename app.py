@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, render_template, request, redirect, url_for
 import subprocess
 import os
@@ -33,20 +32,20 @@ def match():
         try:
             subprocess.run(["./match"], check=True)
         except subprocess.CalledProcessError:
-            return "\u4e0d\u952e\u884c\u4e2d\u9519\u8bef\u53d1\u751f\u4e86\u3002"
+            return "매칭 실행 중 오류가 발생했습니다."
 
         try:
             with open("result_of_match.txt", "r", encoding="utf-8") as f:
                 result = f.read()
         except FileNotFoundError:
-            return "\u7ed3\u679c\u6587\u4ef6\u4e0d\u5b58\u5728\u3002"
+            return "결과 파일이 존재하지 않습니다."
 
         game_counts = {}
         for line in result.splitlines():
             for name in line.strip().split():
                 game_counts[name] = game_counts.get(name, 0) + 1
 
-        save_record(result, game_counts)
+        folder_name = save_record(result, game_counts)  # 폴더 생성 책임을 db.py에 위임
         return render_template("index.html", result=result, game_counts=game_counts)
 
     return render_template("index.html")
@@ -60,7 +59,7 @@ def records():
 def record_detail(folder_name):
     result, game_counts, nth_game_counts = load_record_detail(folder_name)
     if result is None:
-        return "\u8bb0\u5f55\u6587\u4ef6\u4e0d\u5b58\u5728\u6216\u635f\u574f\u3002"
+        return "기록 파일이 존재하지 않거나 손상되었습니다."
     return render_template(
         "record_detail.html",
         folder_name=folder_name,
@@ -79,10 +78,10 @@ def delete_record():
             import shutil
             shutil.rmtree(f"records/{folder}")
         except Exception:
-            return "\u5220\u9664\u8fc7\u7a0b\u4e2d\u51fa\u9519\u3002"
+            return "삭제 중 오류가 발생했습니다."
         return redirect(url_for("records"))
     else:
-        return "\u5bc6\u7801\u9519\u8bef\u3002"
+        return "비밀번호 오류입니다."
 
 @app.route("/rename_record", methods=["POST"])
 def rename_record_route():
@@ -100,48 +99,3 @@ def rename_record_route():
 if __name__ == "__main__":
     app.run(debug=True)
 
-
-# db.py
-import os
-import json
-from datetime import datetime
-
-def save_record(match_result, game_counts):
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    folder_path = f"records/{timestamp}"
-    os.makedirs(folder_path, exist_ok=True)
-
-    with open(f"{folder_path}/result_of_match.txt", "w", encoding="utf-8") as f:
-        f.write(match_result)
-
-    with open(f"{folder_path}/game_counts.json", "w", encoding="utf-8") as f:
-        json.dump(game_counts, f, ensure_ascii=False, indent=2)
-
-def load_all_records():
-    if not os.path.exists("records"):
-        return []
-    return sorted(os.listdir("records"), reverse=True)
-
-def load_record_detail(folder_name):
-    folder_path = f"records/{folder_name}"
-    result_path = f"{folder_path}/result_of_match.txt"
-    game_counts_path = f"{folder_path}/game_counts.json"
-
-    if not os.path.exists(result_path) or not os.path.exists(game_counts_path):
-        return None, None, None
-
-    with open(result_path, "r", encoding="utf-8") as f:
-        match_result = f.read()
-
-    with open(game_counts_path, "r", encoding="utf-8") as f:
-        game_counts = json.load(f)
-
-    nth_game_counts = {}
-    for i, line in enumerate(match_result.splitlines(), start=1):
-        names = line.strip().split()
-        for name in names:
-            if name not in nth_game_counts:
-                nth_game_counts[name] = []
-            nth_game_counts[name].append(len(nth_game_counts[name]) + 1)
-
-    return match_result, game_counts, nth_game_counts

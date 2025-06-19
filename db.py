@@ -11,7 +11,7 @@ def get_unique_folder_name(base_name, records_dir="records"):
     return folder_name
 
 def save_record(match_result, game_counts):
-    date_str = datetime.now().strftime("%Y")  # ✅ 원하는 날짜 포맷
+    date_str = datetime.now().strftime("%Y-%m-%d")  # ✅ 원하는 날짜 포맷
     print("✅ 날짜 포맷 테스트:", date_str)  # ✅ Render 로그 확인용 디버깅 출력
 
     base_folder = get_unique_folder_name(date_str)
