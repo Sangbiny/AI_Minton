@@ -1,76 +1,17 @@
-{% extends "base.html" %}
-{% block content %}
-<style>
-    .record-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-top: 30px;
-    }
-    .record-entry {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 20px;
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    .record-entry a {
-        font-size: 18px;
-        text-decoration: none;
-        color: #333;
-        font-weight: bold;
-    }
-    .record-entry form {
-        margin: 0 5px;
-    }
-    .record-entry input {
-        padding: 4px 8px;
-        margin-right: 6px;
-    }
-    .record-entry button {
-        padding: 6px 12px;
-        font-size: 14px;
-        background-color: #ff4d4d;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    .rename-form button {
-        background-color: #007bff;
-    }
-    .empty-message {
-        margin-top: 40px;
-        font-size: 18px;
-        color: #777;
-        text-align: center;
-    }
-</style>
+{% extends 'base.html' %}
 
-<h1>📂 운동 기록 보기</h1>
-<div class="record-list">
-    {% if record_folders %}
-        {% for folder in record_folders %}
-        <div class="record-entry">
-            <a href="/records/{{ folder }}">{{ folder }}</a>
-            <form action="/rename_record" method="POST" class="rename-form">
-                <input type="hidden" name="old_name" value="{{ folder }}">
-                <input type="text" name="new_name" placeholder="새 이름" required>
-                <input type="password" name="password" placeholder="비밀번호" required>
-                <button type="submit">이름변경</button>
-            </form>
-            <form action="/delete_record" method="POST">
-                <input type="hidden" name="folder" value="{{ folder }}">
-                <input type="password" name="password" placeholder="비밀번호" required>
-                <button type="submit">삭제</button>
-            </form>
-        </div>
-        {% endfor %}
+{% block content %}
+  <h2 class="text-2xl font-bold mb-4">Activity Records</h2>
+  <ul class="list-disc pl-5">
+    {% for folder in folders %}
+      <li>
+        <a href="{{ url_for('record_detail', folder=folder) }}" class="text-blue-500 hover:underline">
+          {{ folder }}
+        </a>
+      </li>
     {% else %}
-        <div class="empty-message">저장된 운동 기록이 없습니다.</div>
-    {% endif %}
-</div>
+      <li>No records yet.</li>
+    {% endfor %}
+  </ul>
 {% endblock %}
 
