@@ -26,19 +26,19 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
                   return a->getGames() < b->getGames();
               });
 
-    // 2. 게임 수별 그룹핑
+    // 2. 게임 수별로 그룹화
     std::map<int, std::vector<Player*>> gameGroup;
     for (Player* p : allPlayers) {
         gameGroup[p->getGames()].push_back(p);
     }
 
-    // 3. 랜덤 셔플 엔진 준비
+    // 3. 랜덤 셔플 준비
     std::random_device rd;
     std::mt19937 g(rd());
 
     std::vector<Player*> result;
 
-    // 4. 가장 낮은 게임수부터 4명이 가능한 조합이 있는지 탐색
+    // 4. 가장 낮은 게임 수부터 후보 조합 탐색
     for (const auto& [games, group] : gameGroup) {
         std::vector<Player*> groupPreferred;
         std::vector<Player*> groupFallback;
@@ -61,14 +61,15 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
             if (groupResult.size() < 4) groupResult.push_back(p);
         }
 
-        if (groupResult.size() == 4) {
+        // 🔥 핵심 개선: 4명 이상일 때만 result로 채택
+        if (groupResult.size() >= 4 && result.empty()) {
             result = groupResult;
-            break; // 4명 정확히 확보되면 이 조합 사용
+            // break 제거 → 더 낮은 게임 수가 우선시됨
         }
     }
 
     if (result.size() < 4) {
-        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 매칭 실패 (4명 불충분)\n";
+        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 매칭 실패 (4명 미만)\n";
         return;
     }
 
