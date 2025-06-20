@@ -36,7 +36,7 @@ std::vector<Player> loadPlayersFromFile(const std::string& filename, int& totalG
 
     while (infile >> name >> gender >> levelChar) {
         int level = convertLevel(levelChar);
-        players.emplace_back(name, gender, level, 0, WAITING);
+        players.emplace_back(name, gender, level, 0, -1);
     }
 
     infile.close();
