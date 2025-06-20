@@ -17,30 +17,43 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
         return;
     }
 
-    // 1. 전체 정렬: 게임 수 오름차순
+    // 1. 게임 수 오름차순 정렬
     std::sort(allPlayers.begin(), allPlayers.end(),
               [](Player* a, Player* b) {
                   return a->getGames() < b->getGames();
               });
 
-    // 2. 출전 이력 기준 분리
+    int minGames = allPlayers.front()->getGames();
+
+    // 2. 게임 수가 minGames인 사람만 후보로 선정
+    std::vector<Player*> candidates;
+    for (Player* p : allPlayers) {
+        if (p->getGames() == minGames) {
+            candidates.push_back(p);
+        } else {
+            break;  // 정렬되어 있으므로 더 이상 안 봐도 됨
+        }
+    }
+
+    // 3. 후보 중에서 이번 경기에 출전하지 않은 사람 우선
     std::vector<Player*> preferred;
     std::vector<Player*> fallback;
 
-    for (Player* p : allPlayers) {
-        if (p->getStates() != currentGameIndex)
+    for (Player* p : candidates) {
+        if (p->getStates() != currentGameIndex) {
             preferred.push_back(p);
-        else
+        } else {
             fallback.push_back(p);
+        }
     }
 
-    // 3. 랜덤 셔플
+    // 4. 셔플
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(preferred.begin(), preferred.end(), g);
     std::shuffle(fallback.begin(), fallback.end(), g);
 
-    // 4. 최종 후보 구성
+    // 5. 최종 4명 선발
     std::vector<Player*> result;
     for (Player* p : preferred) {
         if (result.size() < 4) result.push_back(p);
@@ -50,11 +63,11 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
     }
 
     if (result.size() < 4) {
-        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 매칭 실패 (인원 부족)\n";
+        std::cout << "[SKIP] 경기 " << currentGameIndex << ": minGames=" << minGames << ", 후보 부족(" << result.size() << "명)\n";
         return;
     }
 
-    // 5. 결과 반영
+    // 6. 결과 반영
     for (int i = 0; i < 4; ++i) {
         result[i]->incrementGames();
         result[i]->setStates(currentGameIndex);
