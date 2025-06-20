@@ -8,6 +8,9 @@ from db import (
     delete_record_db,
 )
 from datetime import datetime
+import subprocess
+import json
+import os
 
 app = Flask(__name__)
 
@@ -32,12 +35,10 @@ def match():
         if len(players) < 4:
             return "선수가 4명 이상 필요합니다."
 
-        # 날짜 기반 timestamp 생성 + 중복 방지
         base_timestamp = datetime.now().strftime("%Y-%m-%d")
         timestamp = base_timestamp
         suffix = 2
-        existing = load_all_records()
-        while timestamp in existing:
+        while timestamp in load_all_records():
             timestamp = f"{base_timestamp} ({suffix})"
             suffix += 1
 
@@ -48,7 +49,7 @@ def match():
             "index.html",
             match_result=match_result,
             game_counts=game_counts,
-            folder_name=timestamp,
+            folder_name=timestamp
         )
 
     return render_template("index.html", match_result=None)
@@ -83,24 +84,32 @@ def delete_record():
     return redirect(url_for("records"))
 
 def run_match_algorithm(players, total_game_count):
-    result_lines = []
+    # Step 1: write to input.txt
+    with open("input.txt", "w", encoding="utf-8") as f:
+        f.write(f"{total_game_count}\n")
+        for p in players:
+            f.write(f"{p[0]} {p[1]} {p[2]}\n")  # name gender level
+
+    # Step 2: execute the C++ binary
+    try:
+        subprocess.run(["./match"], check=True)
+    except subprocess.CalledProcessError as e:
+        return "매칭 알고리즘 실행 실패", {}
+
+    # Step 3: read result_of_match.txt
+    try:
+        with open("result_of_match.txt", "r", encoding="utf-8") as f:
+            match_result = f.read()
+    except FileNotFoundError:
+        return "결과 파일을 찾을 수 없습니다.", {}
+
+    # Step 4: count games
     game_counts = {}
-
-    num_players = len(players)
-    if num_players < 4:
-        return "", {}
-
-    idx = 0
-    for i in range(total_game_count):
-        match = []
-        for j in range(4):
-            match.append(players[(idx + j) % num_players][0])
-        idx += 1
-        result_lines.append(" ".join(match))
-        for name in match:
+    for line in match_result.strip().splitlines():
+        for name in line.strip().split():
             game_counts[name] = game_counts.get(name, 0) + 1
 
-    return "\n".join(result_lines), game_counts
+    return match_result, game_counts
 
 if __name__ == "__main__":
     init_db()
