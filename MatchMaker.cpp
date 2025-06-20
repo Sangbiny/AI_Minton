@@ -13,7 +13,7 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
     }
 
     if (allPlayers.size() < 4) {
-        std::cout << "[ERROR] 플레이어 수가 4명 미만입니다.\n";
+        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 플레이어 수 부족\n";
         return;
     }
 
@@ -25,50 +25,37 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
 
     int minGames = allPlayers.front()->getGames();
 
-    // 후보군 설정 (minGames or minGames+1)
+    // 후보: minGames인 사람들
     std::vector<Player*> candidates;
     for (Player* p : allPlayers) {
-        int g = p->getGames();
-        if (g == minGames || g == minGames + 1) {
+        if (p->getGames() == minGames)
             candidates.push_back(p);
+    }
+
+    // 부족하면 minGames + 1 사람까지 확장
+    if (candidates.size() < 4) {
+        for (Player* p : allPlayers) {
+            if (p->getGames() == minGames + 1)
+                candidates.push_back(p);
+            if (candidates.size() >= 4) break;
         }
     }
 
-    // candidates 중 state 기준 분리
-    std::vector<Player*> preferred;
-    std::vector<Player*> fallback;
-
-    for (Player* p : candidates) {
-        if (p->getStates() != currentGameIndex)
-            preferred.push_back(p);
-        else
-            fallback.push_back(p);
-    }
-
-    // 셔플
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(preferred.begin(), preferred.end(), g);
-    std::shuffle(fallback.begin(), fallback.end(), g);
-
-    // 최종 선발
-    std::vector<Player*> result;
-    for (Player* p : preferred) {
-        if (result.size() < 4) result.push_back(p);
-    }
-    for (Player* p : fallback) {
-        if (result.size() < 4) result.push_back(p);
-    }
-
-    if (result.size() < 4) {
-        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 매칭 실패 (4명 부족)\n";
+    if (candidates.size() < 4) {
+        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 후보 부족 (" << candidates.size() << "명)\n";
         return;
     }
 
-    // 적용
+    // 셔플해서 4명 추출
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(candidates.begin(), candidates.end(), g);
+
+    std::vector<Player*> result(candidates.begin(), candidates.begin() + 4);
+
     for (int i = 0; i < 4; ++i) {
         result[i]->incrementGames();
-        result[i]->setStates(currentGameIndex);
+        result[i]->setStates(currentGameIndex);  // 상태는 써도 무시됨
         out << result[i]->getName();
         if (i == 3) out << "\n";
         else        out << " ";
