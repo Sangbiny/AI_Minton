@@ -5,8 +5,8 @@
 #include <vector>
 #include "player.h"
 
-void matchPlayers(std::vector<Player>& player, int totalGame, std::ostream& out);
-
+// currentGameIndex를 추가로 받음
+void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostream& out);
 
 #endif
 
