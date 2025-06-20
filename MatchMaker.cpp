@@ -58,5 +58,9 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
     for (int i = 0; i < 4; ++i) {
         result[i]->incrementGames();
         result[i]->setStates(currentGameIndex);
-        out << result[i]->getN
+        out << result[i]->getName();
+        if (i == 3) out << "\n";
+        else        out << " ";
+    }
+}
 
