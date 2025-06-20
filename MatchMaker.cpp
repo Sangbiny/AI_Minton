@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
+#include <map>
 
 void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostream& out) {
     // 전체 플레이어 포인터 리스트 (정렬용)
@@ -15,55 +16,50 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
         allPlayers.push_back(&p);
     }
 
-    // 게임 수 오름차순 정렬
-    std::sort(allPlayers.begin(), allPlayers.end(),
-              [](Player* a, Player* b) {
-                  return a->getGames() < b->getGames();
-              });
-
     if (allPlayers.size() < 4) {
         std::cout << "[ERROR] 플레이어 수가 4명 미만입니다.\n";
         return;
     }
 
-    // 최소 게임 수
-    int minGames = allPlayers.front()->getGames();
+    // 1. 게임 수 오름차순 정렬
+    std::sort(allPlayers.begin(), allPlayers.end(),
+              [](Player* a, Player* b) {
+                  return a->getGames() < b->getGames();
+              });
 
-    // 후보 확보: minGames, minGames+1, ... 순서로 4명 이상 확보될 때까지 추가
-    std::vector<Player*> candidates;
-    int level = 0;
-    while (candidates.size() < 4 && level < 100) {  // level 제한으로 무한 루프 방지
-        for (Player* p : allPlayers) {
-            if (p->getGames() == minGames + level) {
-                candidates.push_back(p);
-            }
-        }
-        level++;
+    // 2. 게임 수별로 그룹화
+    std::map<int, std::vector<Player*>> gameGroup;
+    for (Player* p : allPlayers) {
+        gameGroup[p->getGames()].push_back(p);
     }
 
-    if (candidates.size() < 4) {
-        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 후보 부족 (총 " << candidates.size() << "명)\n";
+    // 3. 매칭할 후보 추출
+    std::vector<Player*> preferred;  // state != currentGameIndex
+    std::vector<Player*> fallback;   // state == currentGameIndex
+
+    for (const auto& [games, group] : gameGroup) {
+        for (Player* p : group) {
+            if (p->getStates() != currentGameIndex)
+                preferred.push_back(p);
+            else
+                fallback.push_back(p);
+        }
+        if (preferred.size() + fallback.size() >= 4)
+            break; // 4명 확보되면 stop
+    }
+
+    if (preferred.size() + fallback.size() < 4) {
+        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 매칭할 인원이 부족합니다.\n";
         return;
     }
 
-    // 후보를 state 기준으로 나누기
-    std::vector<Player*> preferred;
-    std::vector<Player*> fallback;
-
-    for (Player* p : candidates) {
-        if (p->getStates() != currentGameIndex) {
-            preferred.push_back(p);
-        } else {
-            fallback.push_back(p);
-        }
-    }
-
-    // 셔플
+    // 4. 랜덤 셔플
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(preferred.begin(), preferred.end(), g);
     std::shuffle(fallback.begin(), fallback.end(), g);
 
+    // 5. 최종 선발
     std::vector<Player*> result;
     for (Player* p : preferred) {
         if (result.size() < 4) result.push_back(p);
@@ -77,7 +73,7 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
         return;
     }
 
-    // 매칭 성공 → 결과 출력 및 상태 갱신
+    // 6. 매칭 결과 적용 및 출력
     for (int i = 0; i < 4; ++i) {
         result[i]->incrementGames();
         result[i]->setStates(currentGameIndex);
