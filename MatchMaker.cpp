@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <random>
 #include <set>
+#include <climits> // for INT_MAX
 
 void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostream& out) {
     std::vector<Player*> sortedPlayers;
@@ -9,55 +10,66 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
         sortedPlayers.push_back(&p);
     }
 
-    // 게임수 기준 정렬 (오름차순)
-    std::sort(sortedPlayers.begin(), sortedPlayers.end(), [](Player* a, Player* b) {
-        return a->getGames() < b->getGames();
-    });
+    // 최소 게임 수 계산
+    int minGames = INT_MAX;
+    for (const auto& p : players) {
+        if (p.getGames() < minGames) {
+            minGames = p.getGames();
+        }
+    }
 
+    // 직전 경기 참가자 수집
     std::set<std::string> lastGamePlayers;
-    for (auto& p : players) {
+    for (const auto& p : players) {
         if (p.getStates() == currentGameIndex - 1) {
             lastGamePlayers.insert(p.getName());
         }
     }
 
+    // 후보자: 최소 게임 수이고 직전 경기 출전 안 한 사람 우선
     std::vector<Player*> candidates;
-    // 연속 출전은 피하기 위해 lastGame에 없으면서 게임수가 적은 후보 먼저 채택
     for (auto* p : sortedPlayers) {
-        if (lastGamePlayers.find(p->getName()) == lastGamePlayers.end()) {
+        if (p->getGames() == minGames && lastGamePlayers.count(p->getName()) == 0) {
             candidates.push_back(p);
         }
     }
 
-    // 그래도 부족하면 lastGame에 포함된 사람도 추가
+    // 부족할 경우, 직전 경기 참가자도 포함
+    for (auto* p : sortedPlayers) {
+        if (p->getGames() == minGames && std::find(candidates.begin(), candidates.end(), p) == candidates.end()) {
+            candidates.push_back(p);
+        }
+    }
+
+    // 그래도 부족하면 게임 수 많은 사람도 허용
     for (auto* p : sortedPlayers) {
         if (std::find(candidates.begin(), candidates.end(), p) == candidates.end()) {
             candidates.push_back(p);
         }
     }
 
-    // 후보 섞기 (랜덤)
+    // 랜덤 섞기
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(candidates.begin(), candidates.end(), g);
 
-    std::vector<Player*> selected;
-    std::set<std::string> alreadyPicked;
-
+    // 상위 4명 뽑기
+    std::vector<Player*> match;
     for (auto* p : candidates) {
-        if (selected.size() < 4 && alreadyPicked.find(p->getName()) == alreadyPicked.end()) {
-            selected.push_back(p);
-            alreadyPicked.insert(p->getName());
+        if (match.size() < 4) {
+            match.push_back(p);
         }
     }
 
-    if (selected.size() < 4) {
-        out << "== 제 " << currentGameIndex + 1 << " 경기: 매칭 실패 (최종후보 부족 " << selected.size() << "명)\n";
+    // 매칭 실패 처리
+    if (match.size() < 4) {
+        out << "== 제 " << currentGameIndex + 1 << " 경기: 매칭 실패 (최종후보 부족 " << match.size() << "명)\n";
         return;
     }
 
+    // 결과 출력 및 상태 갱신
     out << "== 제 " << currentGameIndex + 1 << " 경기: ";
-    for (auto* p : selected) {
+    for (auto* p : match) {
         out << p->getName() << " ";
         p->incrementGames();
         p->setStates(currentGameIndex);
