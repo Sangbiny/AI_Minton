@@ -1,91 +1,85 @@
-#include "player.h"
 #include "MatchMaker.h"
-#include <vector>
 #include <algorithm>
-#include <iostream>
-#include <fstream>
 #include <random>
-#include <unordered_set>
+#include <set>
+#include <map>
+#include <ctime>
 
-void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostream& out) {
-    std::vector<Player*> allPlayers;
-    for (Player& p : players)
-        allPlayers.push_back(&p);
+MatchMaker::MatchMaker(std::vector<Player>& players, int totalGames)
+    : players(players), totalGames(totalGames) {
+    std::srand(std::time(nullptr));
+}
 
-    if (allPlayers.size() < 4) {
-        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 플레이어 수 부족\n";
-        return;
-    }
+void MatchMaker::run() {
+    std::set<std::string> lastGamePlayers;
 
-    // 1. 게임 수 오름차순 정렬
-    std::sort(allPlayers.begin(), allPlayers.end(),
-              [](Player* a, Player* b) {
-                  return a->getGames() < b->getGames();
-              });
+    for (int gameIndex = 1; gameIndex <= totalGames; ++gameIndex) {
+        std::vector<Player*> eligible;
 
-    int minGames = allPlayers.front()->getGames();
-
-    // 2. minGames인 사람만 추림 (최우선)
-    std::vector<Player*> priority;
-    for (Player* p : allPlayers) {
-        if (p->getGames() == minGames)
-            priority.push_back(p);
-    }
-
-    // 셔플
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(priority.begin(), priority.end(), g);
-
-    std::vector<Player*> result;
-    for (Player* p : priority) {
-        if (result.size() < 4)
-            result.push_back(p);
-    }
-
-    // 3. 남은 자리에 state 고려하여 추가 (게임수 == minGames + 1)
-    std::unordered_set<int> existingStates;
-    for (Player* p : result) {
-        existingStates.insert(p->getStates());
-    }
-
-    std::vector<Player*> stateCandidates;
-    std::vector<Player*> stateFallback;
-
-    for (Player* p : allPlayers) {
-        if (p->getGames() == minGames + 1 &&
-            std::find(result.begin(), result.end(), p) == result.end()) {
-            if (existingStates.find(p->getStates()) == existingStates.end())
-                stateCandidates.push_back(p);
-            else
-                stateFallback.push_back(p);
+        // 최소 게임수 계산
+        int minGames = INT_MAX;
+        for (auto& p : players) {
+            if (p.games < minGames) minGames = p.games;
         }
-    }
 
-    std::shuffle(stateCandidates.begin(), stateCandidates.end(), g);
-    std::shuffle(stateFallback.begin(), stateFallback.end(), g);
+        // 게임수 가장 적은 사람들만 후보로
+        for (auto& p : players) {
+            if (p.games == minGames) {
+                eligible.push_back(&p);
+            }
+        }
 
-    for (Player* p : stateCandidates) {
-        if (result.size() < 4)
-            result.push_back(p);
-    }
-    for (Player* p : stateFallback) {
-        if (result.size() < 4)
-            result.push_back(p);
-    }
+        // 연속 출전 방지
+        std::vector<Player*> pool;
+        for (auto* p : eligible) {
+            if (lastGamePlayers.find(p->name) == lastGamePlayers.end()) {
+                pool.push_back(p);
+            }
+        }
 
-    if (result.size() < 4) {
-        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 최종 후보 부족 (" << result.size() << "명)\n";
-        return;
-    }
+        // 후보가 4명 안 되면, eligible 중에서도 추가
+        if (pool.size() < 4) {
+            for (auto* p : eligible) {
+                if (std::find(pool.begin(), pool.end(), p) == pool.end()) {
+                    pool.push_back(p);
+                    if (pool.size() == 4) break;
+                }
+            }
+        }
 
-    // 4. 매칭 결과 반영
-    for (int i = 0; i < 4; ++i) {
-        result[i]->incrementGames();
-        result[i]->setStates(currentGameIndex);
-        out << result[i]->getName();
-        if (i == 3) out << "\n";
-        else        out << " ";
+        // 그래도 부족하면 다음 게임수 사람 중 추가
+        int gamesToCheck = minGames + 1;
+        while (pool.size() < 4) {
+            for (auto& p : players) {
+                if (p.games == gamesToCheck && 
+                    lastGamePlayers.find(p.name) == lastGamePlayers.end() &&
+                    std::find(pool.begin(), pool.end(), &p) == pool.end()) {
+                    pool.push_back(&p);
+                    if (pool.size() == 4) break;
+                }
+            }
+            gamesToCheck++;
+        }
+
+        // 랜덤 셔플
+        std::random_shuffle(pool.begin(), pool.end());
+
+        // 최종 4명 선택
+        std::vector<Player*> selected(pool.begin(), pool.begin() + 4);
+
+        // 게임 결과 출력
+        std::cout << "제 " << gameIndex << " 경기: ";
+        for (auto* p : selected) {
+            std::cout << p->name << " ";
+            p->games += 1;
+        }
+        std::cout << std::endl;
+
+        // 마지막 출전자 저장
+        lastGamePlayers.clear();
+        for (auto* p : selected) {
+            lastGamePlayers.insert(p->name);
+        }
     }
 }
 
