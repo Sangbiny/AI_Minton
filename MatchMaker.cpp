@@ -1,73 +1,49 @@
+// MatchMaker.cpp
+
 #include "MatchMaker.h"
 #include <algorithm>
 #include <random>
 #include <set>
-#include <climits>
+#include <climits>  // for INT_MAX
 
 void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostream& out) {
-    std::vector<Player*> playerPtrs;
-    for (auto& p : players) {
-        playerPtrs.push_back(&p);
-    }
-
-    int minGames = INT_MAX;
-    for (auto* p : playerPtrs) {
-        minGames = std::min(minGames, p->getGames());
-    }
-
-    std::set<std::string> lastGamePlayers;
-    for (auto* p : playerPtrs) {
-        if (p->getStates() == currentGameIndex - 1) {
-            lastGamePlayers.insert(p->getName());
-        }
-    }
-
     std::vector<Player*> candidates;
-    for (auto* p : playerPtrs) {
-        if (p->getGames() == minGames && lastGamePlayers.count(p->getName()) == 0) {
-            candidates.push_back(p);
+
+    // 1. 최소 게임 수 찾기
+    int minGames = INT_MAX;
+    for (const Player& p : players) {
+        if (p.getGames() < minGames) {
+            minGames = p.getGames();
         }
     }
 
-    // 부족하면 직전 게임자 추가
-    if (candidates.size() < 4) {
-        for (auto* p : playerPtrs) {
-            if (p->getGames() == minGames && lastGamePlayers.count(p->getName())) {
-                if (std::find(candidates.begin(), candidates.end(), p) == candidates.end()) {
-                    candidates.push_back(p);
-                }
-            }
+    // 2. 최소 게임 수 가진 후보 수집
+    for (Player& p : players) {
+        if (p.getGames() == minGames) {
+            candidates.push_back(&p);
         }
     }
 
-    // 더 부족하면 그보다 많은 게임자도 추가
-    if (candidates.size() < 4) {
-        for (auto* p : playerPtrs) {
-            if (std::find(candidates.begin(), candidates.end(), p) == candidates.end()) {
-                candidates.push_back(p);
-            }
-        }
-    }
-
+    // 3. 섞기
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(candidates.begin(), candidates.end(), g);
 
+    // 4. 부족하면 예외 처리
     if (candidates.size() < 4) {
-        out << "== 제 " << currentGameIndex + 1 << " 경기: 매칭 실패 (후보 부족)\n";
+        out << "제 " << currentGameIndex + 1 << "경기: 최종 후보 부족 (" << candidates.size() << "명)\n";
         return;
     }
 
-    std::vector<Player*> match;
-    for (int i = 0; i < 4; ++i) {
-        match.push_back(candidates[i]);
-    }
+    // 5. 상위 4명 선택
+    std::vector<Player*> matchGroup(candidates.begin(), candidates.begin() + 4);
 
-    out << "== 제 " << currentGameIndex + 1 << " 경기: ";
-    for (auto* p : match) {
+    // 6. 출력 및 상태 업데이트
+    out << "제 " << currentGameIndex + 1 << "경기: ";
+    for (Player* p : matchGroup) {
         out << p->getName() << " ";
         p->incrementGames();
-        p->setStates(currentGameIndex);
+        p->setStates(currentGameIndex);  // 경기 번호 저장
     }
     out << "\n";
 }
