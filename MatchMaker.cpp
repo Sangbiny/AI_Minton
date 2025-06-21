@@ -1,81 +1,77 @@
 #include "MatchMaker.h"
+#include <iostream>
 #include <algorithm>
 #include <random>
-#include <set>
-#include <map>
 #include <ctime>
+#include <set>
 
-MatchMaker::MatchMaker(std::vector<Player>& players, int totalGames)
-    : players(players), totalGames(totalGames) {
-    std::srand(std::time(nullptr));
-}
+MatchMaker::MatchMaker(std::vector<Player>& players) : players(players) {}
 
-void MatchMaker::run() {
-    std::set<std::string> lastGamePlayers;
+void MatchMaker::makeMatches(int totalGames) {
+    std::set<std::string> lastGamePlayers;  // 연속 출전 방지용
+    std::mt19937 rng(std::random_device{}());
 
     for (int gameIndex = 1; gameIndex <= totalGames; ++gameIndex) {
-        std::vector<Player*> eligible;
-
-        // 최소 게임수 계산
+        // 1. 가장 적은 게임 수 찾기
         int minGames = INT_MAX;
-        for (auto& p : players) {
-            if (p.games < minGames) minGames = p.games;
+        for (const auto& p : players) {
+            if (p.games < minGames) {
+                minGames = p.games;
+            }
         }
 
-        // 게임수 가장 적은 사람들만 후보로
+        // 2. 최소 게임 수 가진 후보 추리기
+        std::vector<Player*> candidates;
         for (auto& p : players) {
             if (p.games == minGames) {
-                eligible.push_back(&p);
+                candidates.push_back(&p);
             }
         }
 
-        // 연속 출전 방지
-        std::vector<Player*> pool;
-        for (auto* p : eligible) {
+        // 3. 그 중에서 연속 출전이 아닌 사람 우선 추리기
+        std::vector<Player*> nonConsecutive;
+        for (auto* p : candidates) {
             if (lastGamePlayers.find(p->name) == lastGamePlayers.end()) {
+                nonConsecutive.push_back(p);
+            }
+        }
+
+        // 4. 부족하면 candidates에서 보충
+        std::vector<Player*> pool = nonConsecutive;
+        for (auto* p : candidates) {
+            if (std::find(pool.begin(), pool.end(), p) == pool.end()) {
                 pool.push_back(p);
+                if (pool.size() == 4) break;
             }
         }
 
-        // 후보가 4명 안 되면, eligible 중에서도 추가
-        if (pool.size() < 4) {
-            for (auto* p : eligible) {
-                if (std::find(pool.begin(), pool.end(), p) == pool.end()) {
-                    pool.push_back(p);
-                    if (pool.size() == 4) break;
-                }
-            }
-        }
-
-        // 그래도 부족하면 다음 게임수 사람 중 추가
-        int gamesToCheck = minGames + 1;
+        // 5. 그래도 부족하면 다음 게임 수 가진 사람들에서 보충
+        int g = minGames + 1;
         while (pool.size() < 4) {
             for (auto& p : players) {
-                if (p.games == gamesToCheck && 
+                if (p.games == g &&
                     lastGamePlayers.find(p.name) == lastGamePlayers.end() &&
                     std::find(pool.begin(), pool.end(), &p) == pool.end()) {
                     pool.push_back(&p);
                     if (pool.size() == 4) break;
                 }
             }
-            gamesToCheck++;
+            ++g;
         }
 
-        // 랜덤 셔플
-        std::random_shuffle(pool.begin(), pool.end());
-
-        // 최종 4명 선택
+        // 6. 랜덤 셔플해서 4명 선택
+        std::shuffle(pool.begin(), pool.end(), rng);
         std::vector<Player*> selected(pool.begin(), pool.begin() + 4);
 
-        // 게임 결과 출력
+        // 7. 출력 및 게임 수 반영
         std::cout << "제 " << gameIndex << " 경기: ";
         for (auto* p : selected) {
             std::cout << p->name << " ";
-            p->games += 1;
+            p->games++;
         }
         std::cout << std::endl;
 
-        // 마지막 출전자 저장
+        // 8. 마지막 출전자 기록
         lastGamePlayers.clear();
         for (auto* p : selected) {
             lastGamePlayers.insert(p->name);
