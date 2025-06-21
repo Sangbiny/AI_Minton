@@ -1,10 +1,8 @@
-// MatchMaker.cpp
-
 #include "MatchMaker.h"
 #include <algorithm>
 #include <random>
 #include <set>
-#include <climits>  // for INT_MAX
+#include <climits>
 
 void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostream& out) {
     std::vector<Player*> candidates;
@@ -29,7 +27,7 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
     std::mt19937 g(rd());
     std::shuffle(candidates.begin(), candidates.end(), g);
 
-    // 4. 부족하면 예외 처리
+    // 4. 부족하면 메시지만 출력
     if (candidates.size() < 4) {
         out << "제 " << currentGameIndex + 1 << "경기: 최종 후보 부족 (" << candidates.size() << "명)\n";
         return;
@@ -43,7 +41,7 @@ void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostre
     for (Player* p : matchGroup) {
         out << p->getName() << " ";
         p->incrementGames();
-        p->setStates(currentGameIndex);  // 경기 번호 저장
+        p->setStates(currentGameIndex);  // state는 현재 경기 인덱스로
     }
     out << "\n";
 }
