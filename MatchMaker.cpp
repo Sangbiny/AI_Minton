@@ -1,48 +1,77 @@
+#include "player.h"
 #include "MatchMaker.h"
-#include <algorithm>
+#include <vector>
+#include <algorithm> // sort
+#include <iostream>
+#include <fstream>
+#include <cstdlib>  // rand, srand
+#include <ctime>    // time
 #include <random>
-#include <set>
-#include <climits>
 
 void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostream& out) {
-    std::vector<Player*> candidates;
-
-    // 1. 최소 게임 수 찾기
-    int minGames = INT_MAX;
-    for (const Player& p : players) {
-        if (p.getGames() < minGames) {
-            minGames = p.getGames();
-        }
-    }
-
-    // 2. 최소 게임 수 가진 후보 수집
+    // 1. 전체 플레이어 중 WAITING 상태였던 것을 이제 경기 번호 비교로 대체
+    std::vector<Player*> waitingPlayers;
     for (Player& p : players) {
-        if (p.getGames() == minGames) {
-            candidates.push_back(&p);
+        waitingPlayers.push_back(&p); // 전체 다 포함
+    }
+
+    // 2. 게임 수 오름차순 정렬
+    std::sort(waitingPlayers.begin(), waitingPlayers.end(),
+              [](Player* a, Player* b) {
+                  return a->getGames() < b->getGames();
+              });
+
+    // 3. 가장 적은 게임 수 찾기
+    int minGames = waitingPlayers.front()->getGames();
+
+    // 4. minGames인 후보만 추출
+    std::vector<Player*> candidates;
+    for (Player* p : waitingPlayers) {
+        if (p->getGames() == minGames) {
+            candidates.push_back(p);
+        } else {
+            break;
         }
     }
 
-    // 3. 섞기
+    // 5. 후보 중에서 state가 현재 경기 번호가 아닌 사람들을 우선 추출
+    std::vector<Player*> preferred;
+    std::vector<Player*> fallback;
+
+    for (Player* p : candidates) {
+        if (p->getStates() != currentGameIndex) {
+            preferred.push_back(p);
+        } else {
+            fallback.push_back(p);
+        }
+    }
+
+    // 6. 랜덤 셔플
     std::random_device rd;
     std::mt19937 g(rd());
-    std::shuffle(candidates.begin(), candidates.end(), g);
+    std::shuffle(preferred.begin(), preferred.end(), g);
+    std::shuffle(fallback.begin(), fallback.end(), g);
 
-    // 4. 부족하면 메시지만 출력
-    if (candidates.size() < 4) {
-        out << "제 " << currentGameIndex + 1 << "경기: 최종 후보 부족 (" << candidates.size() << "명)\n";
+    std::vector<Player*> result;
+    for (Player* p : preferred) {
+        if (result.size() < 4) result.push_back(p);
+    }
+    for (Player* p : fallback) {
+        if (result.size() < 4) result.push_back(p);
+    }
+
+    if (result.size() < 4) {
+        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 매칭 인원이 부족합니다.\n";
         return;
     }
 
-    // 5. 상위 4명 선택
-    std::vector<Player*> matchGroup(candidates.begin(), candidates.begin() + 4);
-
-    // 6. 출력 및 상태 업데이트
-    out << "제 " << currentGameIndex + 1 << "경기: ";
-    for (Player* p : matchGroup) {
-        out << p->getName() << " ";
-        p->incrementGames();
-        p->setStates(currentGameIndex);  // state는 현재 경기 인덱스로
+    // 7. 매칭 결과 반영
+    for (int i = 0; i < 4; ++i) {
+        result[i]->incrementGames();
+        result[i]->setStates(currentGameIndex);  // 현재 경기 번호로 state 설정
+        out << result[i]->getName();
+        if (i == 3) out << "\n";
+        else        out << " ";
     }
-    out << "\n";
 }
 
