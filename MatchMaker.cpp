@@ -1,74 +1,88 @@
 #include "player.h"
 #include "MatchMaker.h"
 #include <vector>
-#include <algorithm> // sort
+#include <algorithm>
 #include <iostream>
 #include <fstream>
-#include <cstdlib>  // rand, srand
-#include <ctime>    // time
 #include <random>
+#include <unordered_set>
 
 void matchPlayers(std::vector<Player>& players, int currentGameIndex, std::ostream& out) {
-    // 1. 전체 플레이어 중 WAITING 상태였던 것을 이제 경기 번호 비교로 대체
-    std::vector<Player*> waitingPlayers;
-    for (Player& p : players) {
-        waitingPlayers.push_back(&p); // 전체 다 포함
+    std::vector<Player*> allPlayers;
+    for (Player& p : players)
+        allPlayers.push_back(&p);
+
+    if (allPlayers.size() < 4) {
+        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 플레이어 수 부족\n";
+        return;
     }
 
-    // 2. 게임 수 오름차순 정렬
-    std::sort(waitingPlayers.begin(), waitingPlayers.end(),
+    // 1. 게임 수 오름차순 정렬
+    std::sort(allPlayers.begin(), allPlayers.end(),
               [](Player* a, Player* b) {
                   return a->getGames() < b->getGames();
               });
 
-    // 3. 가장 적은 게임 수 찾기
-    int minGames = waitingPlayers.front()->getGames();
+    int minGames = allPlayers.front()->getGames();
 
-    // 4. minGames인 후보만 추출
-    std::vector<Player*> candidates;
-    for (Player* p : waitingPlayers) {
-        if (p->getGames() == minGames) {
-            candidates.push_back(p);
-        } else {
-            break;
-        }
+    // 2. minGames인 사람만 추림 (최우선)
+    std::vector<Player*> priority;
+    for (Player* p : allPlayers) {
+        if (p->getGames() == minGames)
+            priority.push_back(p);
     }
 
-    // 5. 후보 중에서 state가 현재 경기 번호가 아닌 사람들을 우선 추출
-    std::vector<Player*> preferred;
-    std::vector<Player*> fallback;
-
-    for (Player* p : candidates) {
-        if (p->getStates() != currentGameIndex) {
-            preferred.push_back(p);
-        } else {
-            fallback.push_back(p);
-        }
-    }
-
-    // 6. 랜덤 셔플
+    // 셔플
     std::random_device rd;
     std::mt19937 g(rd());
-    std::shuffle(preferred.begin(), preferred.end(), g);
-    std::shuffle(fallback.begin(), fallback.end(), g);
+    std::shuffle(priority.begin(), priority.end(), g);
 
     std::vector<Player*> result;
-    for (Player* p : preferred) {
-        if (result.size() < 4) result.push_back(p);
+    for (Player* p : priority) {
+        if (result.size() < 4)
+            result.push_back(p);
     }
-    for (Player* p : fallback) {
-        if (result.size() < 4) result.push_back(p);
+
+    // 3. 남은 자리에 state 고려하여 추가 (게임수 == minGames + 1)
+    std::unordered_set<int> existingStates;
+    for (Player* p : result) {
+        existingStates.insert(p->getStates());
+    }
+
+    std::vector<Player*> stateCandidates;
+    std::vector<Player*> stateFallback;
+
+    for (Player* p : allPlayers) {
+        if (p->getGames() == minGames + 1 &&
+            std::find(result.begin(), result.end(), p) == result.end()) {
+            if (existingStates.find(p->getStates()) == existingStates.end())
+                stateCandidates.push_back(p);
+            else
+                stateFallback.push_back(p);
+        }
+    }
+
+    std::shuffle(stateCandidates.begin(), stateCandidates.end(), g);
+    std::shuffle(stateFallback.begin(), stateFallback.end(), g);
+
+    for (Player* p : stateCandidates) {
+        if (result.size() < 4)
+            result.push_back(p);
+    }
+    for (Player* p : stateFallback) {
+        if (result.size() < 4)
+            result.push_back(p);
     }
 
     if (result.size() < 4) {
-        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 매칭 인원이 부족합니다.\n";
+        std::cout << "[ERROR] 경기 " << currentGameIndex << ": 최종 후보 부족 (" << result.size() << "명)\n";
         return;
     }
 
-    // 7. 매칭 결과 반영
+    // 4. 매칭 결과 반영
     for (int i = 0; i < 4; ++i) {
         result[i]->incrementGames();
-        result[i]->setStates(currentGameIndex);  // 현재 경기 번호로 state 설정
+        result[i]->setStates(currentGameIndex);
         out << result[i]->getName();
         if (i == 3) out << "\n";
         else        out << " ";
