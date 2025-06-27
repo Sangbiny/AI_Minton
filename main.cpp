@@ -1,3 +1,4 @@
+// main.cpp
 #include <iostream>
 #include <fstream>
 #include <locale>
@@ -5,8 +6,6 @@
 #include "player.h"
 #include "MatchMaker.h"
 #include "PlayerLoader.h"
-
-// main.cpp
 
 int main() {
     int totalGameCnt;
@@ -17,10 +16,7 @@ int main() {
 
     std::cout << "total game Count = " << totalGameCnt << "\n";
 
-    // totalGameCnt만큼 반복, 경기 번호는 i
-    for (int i = 0; i < totalGameCnt; ++i) {
-        matchPlayers(players, i, fout);  // i는 현재 경기 번호
-    }
+    matchPlayers(players, totalGameCnt, fout);  // 반복문 내부로 이전됨
 
     std::cout << "\n 멤버별 게임수\n";
     for (const Player& p : players) {
@@ -32,4 +28,3 @@ int main() {
 
     return 0;
 }
-
