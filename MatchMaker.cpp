@@ -37,7 +37,7 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
 
         std::vector<Player*> result;
         for (Player* p : priority) {
-            if (result.size() < 4)
+            if (result.size() < 4 && p->getStates() != currentGameIndex)
                 result.push_back(p);
         }
 
