@@ -7,8 +7,12 @@
 #include <fstream>
 #include <random>
 #include <unordered_set>
+#include <map>
+#include <set>
 
 void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& out) {
+    std::map<int, std::set<std::string>> gameHistory; // 경기별 참가자 이름 저장
+
     for (int currentGameIndex = 0; currentGameIndex < totalGameCnt; ++currentGameIndex) {
         std::vector<Player*> allPlayers;
         for (Player& p : players)
@@ -37,8 +41,15 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
 
         std::vector<Player*> result;
         for (Player* p : priority) {
-            if (result.size() < 4 && (currentGameIndex == 0 || p->getStates() != currentGameIndex - 1))
-                result.push_back(p);
+            if (result.size() < 4 && (currentGameIndex == 0 || p->getStates() != currentGameIndex - 1)) {
+                bool overlap = false;
+                if (currentGameIndex > 0 && gameHistory.count(currentGameIndex - 1)) {
+                    const auto& prev = gameHistory[currentGameIndex - 1];
+                    if (prev.find(p->getName()) != prev.end()) overlap = true;
+                }
+                if (!overlap)
+                    result.push_back(p);
+            }
         }
 
         std::unordered_set<int> existingStates;
@@ -52,8 +63,15 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
         for (Player* p : allPlayers) {
             if (p->getGames() == minGames + 1 &&
                 std::find(result.begin(), result.end(), p) == result.end()) {
+                bool avoidOverlap = true;
+                if (currentGameIndex > 0 && gameHistory.count(currentGameIndex - 1)) {
+                    const auto& prev = gameHistory[currentGameIndex - 1];
+                    if (prev.find(p->getName()) != prev.end()) avoidOverlap = false;
+                }
+
                 if (existingStates.find(p->getStates()) == existingStates.end() &&
-                    (currentGameIndex == 0 || p->getStates() != currentGameIndex - 1))
+                    (currentGameIndex == 0 || p->getStates() != currentGameIndex - 1) &&
+                    avoidOverlap)
                     stateCandidates.push_back(p);
                 else
                     stateFallback.push_back(p);
@@ -80,6 +98,7 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
         for (int i = 0; i < 4; ++i) {
             result[i]->incrementGames();
             result[i]->setStates(currentGameIndex);
+            gameHistory[currentGameIndex].insert(result[i]->getName());
             out << result[i]->getName();
             if (i == 3) out << "\n";
             else        out << " ";

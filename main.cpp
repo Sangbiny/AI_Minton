@@ -3,6 +3,8 @@
 #include <fstream>
 #include <locale>
 #include <vector>
+#include <map>
+#include <set>
 #include "player.h"
 #include "MatchMaker.h"
 #include "PlayerLoader.h"
@@ -16,7 +18,7 @@ int main() {
 
     std::cout << "total game Count = " << totalGameCnt << "\n";
 
-    matchPlayers(players, totalGameCnt, fout);  // 반복문 내부로 이전됨
+    matchPlayers(players, totalGameCnt, fout);
 
     std::cout << "\n 멤버별 게임수\n";
     for (const Player& p : players) {
