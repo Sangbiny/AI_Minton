@@ -37,7 +37,7 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
 
         std::vector<Player*> result;
         for (Player* p : priority) {
-            if (result.size() < 4)
+            if (result.size() < 4 && p->getStates() != currentGameIndex - 1)
                 result.push_back(p);
         }
 
@@ -52,7 +52,8 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
         for (Player* p : allPlayers) {
             if (p->getGames() == minGames + 1 &&
                 std::find(result.begin(), result.end(), p) == result.end()) {
-                if (existingStates.find(p->getStates()) == existingStates.end())
+                if (existingStates.find(p->getStates()) == existingStates.end() &&
+                    p->getStates() != currentGameIndex - 1)
                     stateCandidates.push_back(p);
                 else
                     stateFallback.push_back(p);
@@ -85,3 +86,4 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
         }
     }
 }
+
