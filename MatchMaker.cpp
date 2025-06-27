@@ -42,13 +42,7 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
         std::vector<Player*> result;
         for (Player* p : priority) {
             if (result.size() < 4 && (currentGameIndex == 0 || p->getStates() != currentGameIndex - 1)) {
-                bool overlap = false;
-                if (currentGameIndex > 0 && gameHistory.count(currentGameIndex - 1)) {
-                    const auto& prev = gameHistory[currentGameIndex - 1];
-                    if (prev.find(p->getName()) != prev.end()) overlap = true;
-                }
-                if (!overlap)
-                    result.push_back(p);
+                result.push_back(p);
             }
         }
 
@@ -63,15 +57,9 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
         for (Player* p : allPlayers) {
             if (p->getGames() == minGames + 1 &&
                 std::find(result.begin(), result.end(), p) == result.end()) {
-                bool avoidOverlap = true;
-                if (currentGameIndex > 0 && gameHistory.count(currentGameIndex - 1)) {
-                    const auto& prev = gameHistory[currentGameIndex - 1];
-                    if (prev.find(p->getName()) != prev.end()) avoidOverlap = false;
-                }
 
                 if (existingStates.find(p->getStates()) == existingStates.end() &&
-                    (currentGameIndex == 0 || p->getStates() != currentGameIndex - 1) &&
-                    avoidOverlap)
+                    (currentGameIndex == 0 || p->getStates() != currentGameIndex - 1))
                     stateCandidates.push_back(p);
                 else
                     stateFallback.push_back(p);
@@ -95,6 +83,19 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
             return;
         }
 
+        // ⚠️ 전 경기와 조합이 동일한 경우: 피하기
+        if (currentGameIndex > 0) {
+            std::set<std::string> prevTeam = gameHistory[currentGameIndex - 1];
+            std::set<std::string> currentTeam;
+            for (Player* p : result) {
+                currentTeam.insert(p->getName());
+            }
+            if (prevTeam == currentTeam) {
+                std::cout << "[WARNING] 경기 " << currentGameIndex << ": 전 경기와 동일한 조합 -> 건너뜀\n";
+                continue;
+            }
+        }
+
         for (int i = 0; i < 4; ++i) {
             result[i]->incrementGames();
             result[i]->setStates(currentGameIndex);
@@ -105,3 +106,4 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
         }
     }
 }
+
