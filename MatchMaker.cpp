@@ -1,109 +1,113 @@
-// MatchMaker.cpp
 #include "player.h"
 #include "MatchMaker.h"
 #include <vector>
-#include <algorithm>
+#include <algorithm> // sort
 #include <iostream>
 #include <fstream>
+#include <cstdlib>  // rand, srand
+#include <ctime>    // time
 #include <random>
-#include <unordered_set>
-#include <map>
-#include <set>
 
-void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& out) {
-    std::map<int, std::set<std::string>> gameHistory; // 경기별 참가자 이름 저장
+void matchPlayers(std::vector<Player>& players, int totalGame, std::ostream& out) {
+    //int playersPerGame = 4; // Double play : 2 vs 2
+    //int courtCount = 1;
+    int gameCnt = 0;  
 
-    for (int currentGameIndex = 0; currentGameIndex < totalGameCnt; ++currentGameIndex) {
-        std::vector<Player*> allPlayers;
-        for (Player& p : players)
-            allPlayers.push_back(&p);
 
-        if (allPlayers.size() < 4) {
-            std::cout << "[ERROR] 경기 " << currentGameIndex << ": 플레이어 수 부족\n";
-            return;
-        }
+    int matchableCount = 0;
 
-        std::sort(allPlayers.begin(), allPlayers.end(),
-                  [](Player* a, Player* b) {
-                      return a->getGames() < b->getGames();
-                  });
 
-        int minGames = allPlayers.front()->getGames();
-        std::vector<Player*> priority;
-        for (Player* p : allPlayers) {
-            if (p->getGames() == minGames)
-                priority.push_back(p);
-        }
+    for (const Player& p : players) {
+        //if (p.getStates() == WAITING) matchableCount++;
+        if (p.getName() != "") matchableCount++;
+    }
+        //std::cout << matchableCount << "\n";
+        //std::cout << playersPerGame << "\n";
 
-        std::random_device rd;
-        std::mt19937 g(rd());
-        std::shuffle(priority.begin(), priority.end(), g);
+    //if (matchableCount < playersPerGame * totalMatches) {
+    //    std::cout << "매칭 가능한 인원 부족\n"; // temp
+    //    return;
+    //}
 
-        std::vector<Player*> result;
-        for (Player* p : priority) {
-            if (result.size() < 4 && (currentGameIndex == 0 || p->getStates() != currentGameIndex - 1)) {
-                result.push_back(p);
-            }
-        }
-
-        std::unordered_set<int> existingStates;
-        for (Player* p : result) {
-            existingStates.insert(p->getStates());
-        }
-
-        std::vector<Player*> stateCandidates;
-        std::vector<Player*> stateFallback;
-
-        for (Player* p : allPlayers) {
-            if (p->getGames() == minGames + 1 &&
-                std::find(result.begin(), result.end(), p) == result.end()) {
-
-                if (existingStates.find(p->getStates()) == existingStates.end() &&
-                    (currentGameIndex == 0 || p->getStates() != currentGameIndex - 1))
-                    stateCandidates.push_back(p);
-                else
-                    stateFallback.push_back(p);
-            }
-        }
-
-        std::shuffle(stateCandidates.begin(), stateCandidates.end(), g);
-        std::shuffle(stateFallback.begin(), stateFallback.end(), g);
-
-        for (Player* p : stateCandidates) {
-            if (result.size() < 4)
-                result.push_back(p);
-        }
-        for (Player* p : stateFallback) {
-            if (result.size() < 4)
-                result.push_back(p);
-        }
-
-        if (result.size() < 4) {
-            std::cout << "[ERROR] 경기 " << currentGameIndex << ": 최종 후보 부족 (" << result.size() << "명)\n";
-            return;
-        }
-
-        // ⚠️ 전 경기와 조합이 동일한 경우: 피하기
-        if (currentGameIndex > 0) {
-            std::set<std::string> prevTeam = gameHistory[currentGameIndex - 1];
-            std::set<std::string> currentTeam;
-            for (Player* p : result) {
-                currentTeam.insert(p->getName());
-            }
-            if (prevTeam == currentTeam) {
-                std::cout << "[WARNING] 경기 " << currentGameIndex << ": 전 경기와 동일한 조합 -> 건너뜀\n";
-                continue;
-            }
-        }
-
-        for (int i = 0; i < 4; ++i) {
-            result[i]->incrementGames();
-            result[i]->setStates(currentGameIndex);
-            gameHistory[currentGameIndex].insert(result[i]->getName());
-            out << result[i]->getName();
-            if (i == 3) out << "\n";
-            else        out << " ";
+    // WAITING 상태인 사람들만 따로 뽑기
+    std::vector<Player*> waitingPlayers;
+    for (Player& p : players) {
+        if (p.getStates() == WAITING) {
+            waitingPlayers.push_back(&p); // 포인터로 저장
         }
     }
-}
 
+    // 게임 수 기준으로 정렬(오름차순) : 흠.. 나중엔 바꿔야지. 랜덤으로.
+    std::sort(waitingPlayers.begin(), waitingPlayers.end(),
+            [](Player* a, Player* b) {
+                return a->getGames() < b->getGames();
+            });
+
+    // 가장 적은 게임 수를 가진 사람들 중 4명랜덤 선택
+    int minGames = waitingPlayers.front()->getGames();
+
+    std::vector<Player*> candidates;
+    for (Player* p : waitingPlayers) {
+        if (p->getGames() == minGames) {
+            candidates.push_back(p);
+        } else {
+            break; // 이미 정렬되어 있어서 그 이상은 안봐도 됨
+        }
+    }
+    
+    // 최소게임수인 사람이 4명이 안될 경우 그다음 게임수가 적은 사람 추가
+    std::vector<Player*> candidates_1;
+    std::vector<Player*> candidates_2;
+    if (candidates.size() < 4) { 
+        for (Player* p : waitingPlayers) {
+            if (p->getGames() == minGames + 1) {
+                candidates_1.push_back(p);
+            } else if(p->getGames() == minGames + 2) {
+                candidates_2.push_back(p);
+            }
+        }
+    }
+    
+    // Random Shuffle
+    std::vector<Player*> result;
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(candidates.begin(), candidates.end(), g);
+    std::shuffle(candidates_1.begin(), candidates_1.end(), g);
+    std::shuffle(candidates_2.begin(), candidates_2.end(), g); 
+
+    for (Player* p : candidates) {
+        if (result.size() < 4) result.push_back(p);
+        else break;
+    }
+    for (Player* p : candidates_1) {
+        if (result.size() < 4) result.push_back(p);
+        else break;
+    }
+    for (Player* p : candidates_2) {
+        if (result.size() < 4) result.push_back(p);
+        else break;
+    }
+
+    if (result.size() < 4) {
+        std::cout << "ERROR\n" << std::endl;
+        return;
+    }
+
+
+    for (int i = 0; i < 4; ++i) {
+        result[i]->incrementGames();
+        out << result[i]->getName();
+        //if (i !=3) out << ", "; //마지막 사람 뒤에는 쉼표 뻄
+        //else       out << "\n";
+        if (i == 3) out << "\n";
+        else        out << " ";
+        ++gameCnt;
+        //std::cout << result[i]->getName();
+        //if (i !=3) std::cout << ", "; //마지막 사람 뒤에는 쉼표 뻄
+        //else       std::cout << "\n";
+    }
+
+
+    std::cout << std::endl;
+}
