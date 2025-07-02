@@ -12,6 +12,7 @@
 
 void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& out) {
     std::map<int, std::set<std::string>> gameHistory;
+    std::set<std::string> previousPlayers;
 
     for (int currentGameIndex = 0; currentGameIndex < totalGameCnt; ++currentGameIndex) {
         std::vector<Player*> allPlayers;
@@ -41,8 +42,9 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
 
         std::vector<Player*> result;
         for (Player* p : priority) {
-            if (result.size() < 4)
+            if (result.size() < 4 && previousPlayers.find(p->getName()) == previousPlayers.end()) {
                 result.push_back(p);
+            }
         }
 
         std::vector<Player*> extraCandidates;
@@ -55,8 +57,16 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
 
         std::shuffle(extraCandidates.begin(), extraCandidates.end(), g);
         for (Player* p : extraCandidates) {
-            if (result.size() < 4)
+            if (result.size() < 4 && previousPlayers.find(p->getName()) == previousPlayers.end()) {
                 result.push_back(p);
+            }
+        }
+
+        // 어쩔 수 없이 연속게임 허용 (인원이 부족한 경우)
+        for (Player* p : allPlayers) {
+            if (result.size() < 4 && std::find(result.begin(), result.end(), p) == result.end()) {
+                result.push_back(p);
+            }
         }
 
         if (result.size() < 4) {
@@ -64,21 +74,14 @@ void matchPlayers(std::vector<Player>& players, int totalGameCnt, std::ostream& 
             return;
         }
 
-        if (currentGameIndex > 0) {
-            std::set<std::string> prevTeam = gameHistory[currentGameIndex - 1];
-            std::set<std::string> currentTeam;
-            for (Player* p : result)
-                currentTeam.insert(p->getName());
-            if (prevTeam == currentTeam) {
-                std::cout << "[WARNING] 경기 " << currentGameIndex << ": 전 경기와 동일한 조합 -> 건너뜀\n";
-                continue;
-            }
-        }
-
+        std::set<std::string> currentTeam;
         for (Player* p : result) {
             p->incrementGames();
-            gameHistory[currentGameIndex].insert(p->getName());
+            currentTeam.insert(p->getName());
         }
+
+        gameHistory[currentGameIndex] = currentTeam;
+        previousPlayers = currentTeam;
 
         for (int i = 0; i < 4; ++i) {
             out << result[i]->getName();
