@@ -1,10 +1,8 @@
 // main.cpp
 #include <iostream>
 #include <fstream>
-#include <locale>
 #include <vector>
-#include <map>
-#include <set>
+#include <locale>
 #include "player.h"
 #include "MatchMaker.h"
 #include "PlayerLoader.h"
@@ -20,7 +18,7 @@ int main() {
 
     matchPlayers(players, totalGameCnt, fout);
 
-    std::cout << "\n 멤버별 게임수\n";
+    std::cout << "\n멤버별 게임 수\n";
     for (const Player& p : players) {
         gout << p.getName() << " " << p.getGames() << "\n";
     }
@@ -30,3 +28,4 @@ int main() {
 
     return 0;
 }
+
