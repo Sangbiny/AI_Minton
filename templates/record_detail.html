@@ -163,16 +163,21 @@
 function toggleDone(checkbox) {
     const row = checkbox.closest('tr');
     if (checkbox.checked) {
-        row.style.opacity = '0.3';           // 전체적으로 흐리게
-        row.style.pointerEvents = 'none';    // 클릭 등 막기 (선택사항)
+        row.style.opacity = '0.3';
+        // 다른 요소는 클릭 막지만 체크박스는 그대로 동작 가능
+        row.querySelectorAll('*:not(input[type="checkbox"])').forEach(el => {
+            el.style.pointerEvents = 'none';
+        });
     } else {
         row.style.opacity = '1';
-        row.style.pointerEvents = 'auto';
+        row.querySelectorAll('*').forEach(el => {
+            el.style.pointerEvents = 'auto';
+        });
     }
 }
 </script>
 
-</script>
+
 
 {% else %}
 <p>기록 파일을 찾을 수 없습니다.</p>
