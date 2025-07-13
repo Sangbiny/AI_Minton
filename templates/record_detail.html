@@ -162,18 +162,7 @@
 <script>
 function toggleDone(checkbox) {
     const row = checkbox.closest('tr');
-    if (checkbox.checked) {
-        row.style.opacity = '0.3';
-        // 다른 요소는 클릭 막지만 체크박스는 그대로 동작 가능
-        row.querySelectorAll('*:not(input[type="checkbox"])').forEach(el => {
-            el.style.pointerEvents = 'none';
-        });
-    } else {
-        row.style.opacity = '1';
-        row.querySelectorAll('*').forEach(el => {
-            el.style.pointerEvents = 'auto';
-        });
-    }
+    row.style.opacity = checkbox.checked ? '0.3' : '1';
 }
 </script>
 
