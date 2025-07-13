@@ -163,11 +163,15 @@
 function toggleDone(checkbox) {
     const row = checkbox.closest('tr');
     if (checkbox.checked) {
-        row.style.backgroundColor = '#ccc';  // 회색 표시
+        row.style.opacity = '0.3';           // 전체적으로 흐리게
+        row.style.pointerEvents = 'none';    // 클릭 등 막기 (선택사항)
     } else {
-        row.style.backgroundColor = '';
+        row.style.opacity = '1';
+        row.style.pointerEvents = 'auto';
     }
 }
+</script>
+
 </script>
 
 {% else %}
