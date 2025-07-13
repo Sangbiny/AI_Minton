@@ -103,14 +103,13 @@
                     <th>선수2</th>
                     <th>선수3</th>
                     <th>선수4</th>
-                    <th>DONE</th>
                 </tr>
             </thead>
             <tbody>
                 {% set player_counts = {} %}
                 {% for line in match_result.split('\n') if line.strip() %}
                 {% set cols = line.split() %}
-                <tr onclick="event.stopPropagation();">
+                <tr>
                     <td class="dogtag">제 {{ loop.index }} 경기</td>
                     {% for i in range(4) %}
                         {% if cols|length > i %}
@@ -122,13 +121,8 @@
                                 <span class="game-number">{{ player_counts[name] }}</span>
                             </div>
                         </td>
-                        {% else %}
-                        <td></td>
-                        {% endif %}
+                        {% else %}<td></td>{% endif %}
                     {% endfor %}
-                    <td>
-                        <input type="checkbox" onchange="toggleDone(this)">
-                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -158,18 +152,6 @@
         </table>
     </div>
 </div>
-
-<script>
-function toggleDone(checkbox) {
-    const row = checkbox.closest('tr');
-    if (checkbox.checked) {
-        row.style.backgroundColor = '#ccc';  // 회색 표시
-    } else {
-        row.style.backgroundColor = '';
-    }
-}
-</script>
-
 {% else %}
 <p>기록 파일을 찾을 수 없습니다.</p>
 {% endif %}
