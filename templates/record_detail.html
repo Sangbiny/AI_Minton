@@ -162,11 +162,32 @@
 <script>
 function toggleDone(checkbox) {
     const row = checkbox.closest('tr');
-    row.style.opacity = checkbox.checked ? '0.3' : '1';
+    const index = row.getAttribute('data-match-index');
+    const key = 'match-' + index;
+
+    if (checkbox.checked) {
+        row.style.opacity = '0.3';
+        localStorage.setItem(key, 'done');
+    } else {
+        row.style.opacity = '1';
+        localStorage.removeItem(key);
+    }
 }
+
+window.addEventListener('DOMContentLoaded', () => {
+    const rows = document.querySelectorAll('table.match-table tbody tr');
+    rows.forEach((row, idx) => {
+        row.setAttribute('data-match-index', idx);
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        const key = 'match-' + idx;
+
+        if (localStorage.getItem(key) === 'done') {
+            checkbox.checked = true;
+            row.style.opacity = '0.3';
+        }
+    });
+});
 </script>
-
-
 
 {% else %}
 <p>기록 파일을 찾을 수 없습니다.</p>
